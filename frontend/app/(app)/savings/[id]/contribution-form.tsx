@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { ContributionFormState } from "@/app/actions/savings";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,7 @@ export function ContributionForm({ action, currency, today }: Props) {
 
   return (
     <form action={formAction} className="grid gap-4">
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
       {state?.success && (
         <p role="status" className="text-sm text-muted-foreground">{t("Đã ghi nhận.")}</p>
       )}

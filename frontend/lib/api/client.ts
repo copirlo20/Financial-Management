@@ -12,14 +12,13 @@ import {
 } from "@fm/shared/wire";
 import { authCookies, clearedAuthCookies } from "@/lib/auth/cookies";
 import { getI18n, getLanguage } from "@/lib/i18n/server";
+import { BACKEND_URL } from "./backend-url";
 import { BackendConnectionError, fetchBackend } from "./retry";
 import { decode } from "./wire";
 
 // Everything the frontend knows or changes goes through the backend's API. These calls are made by the
 // frontend's server side only (Server Components, Server Actions, route handlers): the browser never
 // talks to the backend, and the session token never reaches the page's JavaScript.
-const BACKEND_URL = (process.env.BACKEND_URL ?? "http://127.0.0.1:4000").replace(/\/$/, "");
-
 type Query = Record<string, string | string[] | undefined>;
 
 function queryString(query: Query = {}): string {

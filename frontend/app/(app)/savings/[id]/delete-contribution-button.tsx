@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { deleteContribution } from "@/app/actions/savings";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { Button } from "@/components/ui/button";
 
@@ -15,11 +16,7 @@ export function DeleteContributionButton({ id }: { id: string }) {
       <Button type="submit" variant="ghost" size="sm" disabled={pending}>
         {pending ? t("Đang xóa...") : t("Xóa")}
       </Button>
-      {state?.message && (
-        <p role="alert" className="basis-full text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} className="basis-full" />
     </form>
   );
 }

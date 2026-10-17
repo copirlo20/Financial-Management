@@ -1,5 +1,7 @@
 import { AI_PROVIDERS, type AiProvider } from "@fm/shared/ai";
+import { positiveIntegerFromEnv } from "../env";
 import { hit, used } from "../rate-limit";
+import { DAY_MS, HOUR_MS } from "../time";
 import { anthropicModel } from "./anthropic";
 import type { AiFailure, AiModel } from "./model";
 import { openAiModel } from "./openai";
@@ -8,21 +10,14 @@ import { openAiModel } from "./openai";
 // (ANTHROPIC_API_KEY) or OpenAI (OPENAI_API_KEY). AI_PROVIDER chooses when both keys are set; without it
 // Claude is used if its key is there, else OpenAI. A provider chosen without its key leaves AI off, so the
 // data never goes to a company the administrator did not pick.
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
 const KEYS: Record<AiProvider, string> = { anthropic: "ANTHROPIC_API_KEY", openai: "OPENAI_API_KEY" };
 const MODELS: Record<AiProvider, AiModel> = { anthropic: anthropicModel, openai: openAiModel };
-
-function limitFromEnv(name: string, fallback: number): number {
-  const value = Number(process.env[name]);
-  return Number.isInteger(value) && value > 0 ? value : fallback;
-}
 
 // What the AI service may cost per day, in tokens (input + output, as the API reports them). The whole
 // app shares the first; every user also has a share of their own, so that one account, or a few new
 // ones, cannot spend the day's budget for everyone.
-const DAILY_TOKEN_BUDGET = limitFromEnv("AI_DAILY_TOKEN_BUDGET", 2_000_000);
-const USER_DAILY_TOKEN_BUDGET = limitFromEnv("AI_USER_DAILY_TOKEN_BUDGET", 200_000);
+const DAILY_TOKEN_BUDGET = positiveIntegerFromEnv("AI_DAILY_TOKEN_BUDGET", 2_000_000);
+const USER_DAILY_TOKEN_BUDGET = positiveIntegerFromEnv("AI_USER_DAILY_TOKEN_BUDGET", 200_000);
 
 const warned = new Set<string>();
 function warnOnce(message: string) {

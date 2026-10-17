@@ -1,24 +1,8 @@
+import { BASE, check, report, decode, clean, get, db } from "./harness.mjs";
 // Empty states for a brand-new user, and not-found pages.
-import { createRequire } from "node:module";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const EMAIL = `e2e-states-${Date.now()}@example.com`;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const clean = (s) => decode(s.replace(/<script[\s\S]*?<\/script>/g, "")).replace(/<!-- -->/g, "").replace(/\u00a0|\u202f/g, " ");
-const cookieHeader = (jar) => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
 
 try {
@@ -68,5 +52,4 @@ try {
   await db.query(`delete from users where email = $1`, [EMAIL]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

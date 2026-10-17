@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { MappingFormState } from "@/app/actions/imports";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -73,11 +74,7 @@ export function MappingForm({ action, columns, expenseCategories, incomeCategori
   return (
     <form action={formAction} className="grid gap-4 [&>*]:min-w-0">
       <FormNavigationMarker />
-      {state?.message && (
-        <p role="alert" className="text-sm whitespace-pre-line text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} className="whitespace-pre-line" />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid content-start gap-2">

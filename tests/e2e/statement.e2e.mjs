@@ -1,46 +1,14 @@
-import { createRequire } from "node:module";
 import { pdfText } from "../pdf-text.mjs";
+import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one } from "./harness.mjs";
 
 // The PDF account statement (/transactions/statement → backend GET /api/reports/statement): the figures for
 // one account and for all accounts, what is left out of the period, the refusals and the per-hour limit.
 // The PDF's text is read back with tests/pdf-text.mjs.
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const STAMP = Date.now();
 const A = `e2e-sta-${STAMP}@example.com`;
 const B = `e2e-stb-${STAMP}@example.com`;
 const C = `e2e-stc-${STAMP}@example.com`;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const clean = (s) => decode(s.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "")).replace(/<!-- -->/g, "").replace(/\u00a0|\u202f/g, " ");
-function readCookies(res, jar) {
-  for (const header of res.headers.getSetCookie()) { const pair = header.split(";")[0]; const i = pair.indexOf("="); jar[pair.slice(0, i).trim()] = pair.slice(i + 1); }
-  return jar;
-}
-const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
-const page = async (path, jar) => (await get(path, jar)).text();
-async function registerUser(email, name) {
-  const html = await page("/register");
-  const form = html.match(/<form[\s\S]*?<\/form>/)[0];
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) body.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  for (const [k, v] of Object.entries({ name, email, password: "abc12345", confirmPassword: "abc12345" })) body.append(k, v);
-  return readCookies(await fetch(BASE + "/register", { method: "POST", body, redirect: "manual", headers: { origin: BASE } }), {});
-}
-
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 
 // Downloads a statement. Returns the response and, for a PDF, its text (all pages, one piece per line).
 async function statement(jar, query) {
@@ -159,5 +127,4 @@ try {
   await db.query(`delete from users where email = any($1)`, [[A, B, C]]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

@@ -1,66 +1,12 @@
-import { createRequire } from "node:module";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "./harness.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const STAMP = Date.now();
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
 const ADM = `e2e-adm-${STAMP}@example.com`;
 const KEY = `e2e_pets_${STAMP}`;
-const PASSWORD = "abc12345";
-let failures = 0;
 
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-
-const decode = (s) =>
-  s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const clean = (s) => decode(s.replace(/<script[\s\S]*?<\/script>/g, "")).replace(/<!-- -->/g, "").replace(/\u00a0|\u202f/g, " ");
-
-function readCookies(res, jar) {
-  for (const header of res.headers.getSetCookie()) {
-    const pair = header.split(";")[0];
-    const i = pair.indexOf("=");
-    jar[pair.slice(0, i).trim()] = pair.slice(i + 1);
-  }
-  return jar;
-}
-const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
-const page = async (path, jar) => (await get(path, jar)).text();
-
-function formWith(html, marker) {
-  const form = [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]).find((f) => f.includes(marker));
-  if (!form) throw new Error(`no form containing ${marker}`);
-  return form;
-}
-
-async function submit(path, form, data, jar) {
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) {
-    const name = decode(tag.match(/name="([^"]*)"/)?.[1] ?? "");
-    if (name && !(name in data)) body.append(name, decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  }
-  for (const [k, v] of Object.entries(data)) body.append(k, v);
-  return fetch(BASE + path, { method: "POST", body, redirect: "manual", headers: { cookie: cookieHeader(jar), origin: BASE } });
-}
-
-async function registerUser(email, name) {
-  const html = await page("/register");
-  const res = await submit("/register", formWith(html, 'name="confirmPassword"'), { name, email, password: PASSWORD, confirmPassword: PASSWORD }, {});
-  return readCookies(res, {});
-}
-
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
-const userId = async (email) => (await one(`select id from users where email = $1`, [email])).id;
+
 const category = (email, name) =>
   one(`select c.* from categories c join users u on u.id = c."userId" where u.email = $1 and c.name = $2`, [email, name]);
 const byId = (id) => one(`select * from categories where id = $1`, [id]);
@@ -203,5 +149,4 @@ try {
   await db.end();
 }
 
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

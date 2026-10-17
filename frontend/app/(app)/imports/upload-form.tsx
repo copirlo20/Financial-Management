@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { AI_PROVIDER_NAMES, type AiProvider } from "@fm/shared/ai";
 import { uploadImport } from "@/app/actions/imports";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -27,11 +28,7 @@ export function UploadForm({ accounts, aiProvider }: Props) {
   return (
     <form action={formAction} className="grid gap-4">
       <FormNavigationMarker />
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
 
       <div className="grid gap-2">
         <Label htmlFor="up-account">{t("Nhập vào tài khoản")}</Label>

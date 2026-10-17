@@ -88,7 +88,7 @@ Mọi thao tác phá hủy đi qua [`ConfirmButton`](../frontend/components/conf
 
 Mọi form theo cùng một mẫu: [`useActionState`](https://react.dev/reference/react/useActionState) gọi Server Action, nhận `FormState` ([request-flow.md](request-flow.md)).
 
-- `errors` hiện dưới từng trường (`FieldError`, `aria-invalid`, `aria-describedby`), `message` ở đầu form (`role="alert"`), `success` là dòng trạng thái (`role="status"`).
+- `errors` hiện dưới từng trường (`FieldError`, `aria-invalid`, `aria-describedby`), `message` ở đầu form (`FormMessage`, `role="alert"`), `success` là dòng trạng thái (`role="status"`).
 - **Giữ những gì đã gõ** khi lỗi (`values` điền lại), **xóa trắng** khi thành công; ô chọn dùng `key` để dựng lại theo giá trị mới.
 - Cột và lưới hai cột dùng `content-start`, nên ô thấp hơn không bị đẩy xuống khi ô cạnh có gợi ý dài hoặc báo lỗi.
 - Form cập nhật **tại chỗ** (không tải lại trang): danh sách cập nhật vì frontend xóa cache sau mỗi lệnh ghi.

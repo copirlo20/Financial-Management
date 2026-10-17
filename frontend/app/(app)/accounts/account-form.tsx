@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { SUPPORTED_CURRENCIES } from "@fm/shared/currencies";
 import { ACCOUNT_TYPE_LABELS } from "@fm/shared/labels";
 import type { AccountFormState } from "@/app/actions/accounts";
+import { CurrencyOptions } from "@/components/currency-options";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -27,11 +28,7 @@ export function AccountForm({ action, mode, defaults }: Props) {
   return (
     <form action={formAction} className="grid gap-4">
       {mode === "edit" && <FormNavigationMarker />}
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
       {state?.success && (
         <p role="status" className="text-sm text-muted-foreground">{t("Đã tạo tài khoản.")}</p>
       )}
@@ -81,11 +78,7 @@ export function AccountForm({ action, mode, defaults }: Props) {
             aria-invalid={Boolean(state?.errors?.currency)}
             aria-describedby="currency-error"
           >
-            {SUPPORTED_CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
+            <CurrencyOptions />
           </NativeSelect>
         ) : (
           <>

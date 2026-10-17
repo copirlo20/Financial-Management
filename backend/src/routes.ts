@@ -18,6 +18,7 @@ import { buildCsvTemplate, buildXlsxTemplate } from "./imports/template";
 import { hit } from "./rate-limit";
 import { buildStatement } from "./reports/statement";
 import { renderStatementPdf } from "./reports/statement-pdf";
+import { HOUR_MS } from "./time";
 import { accountView, accountsView } from "./views/accounts";
 import { budgetView, budgetsView } from "./views/budgets";
 import { adminCategoriesView, adminCategoryView, categoriesView, categoryView } from "./views/categories";
@@ -31,7 +32,6 @@ import { transactionView, transactionsView } from "./views/transactions";
 const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 // Building a statement reads a period of transactions and draws a PDF, so each user gets a few per hour.
 const STATEMENTS_PER_HOUR = 30;
-const HOUR_MS = 60 * 60 * 1000;
 const id = (req: Request) => routeParam(req, "id");
 
 // Every route of the API, mounted under /api. view() routes read, command() routes change something

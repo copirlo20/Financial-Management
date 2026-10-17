@@ -1,23 +1,7 @@
-import { createRequire } from "node:module";
+import { BASE, PASSWORD, check, report, decode, cookieHeader, get, db, sleep } from "./harness.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const EMAIL = `e2e-${Date.now()}@example.com`;
-const PASSWORD = "abc12345";
 const NAME = "E2E Tester";
-let failures = 0;
-
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-
-const decode = (s) =>
-  s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 
 function setCookies(res) {
   const out = {};
@@ -28,14 +12,6 @@ function setCookies(res) {
   }
   return out;
 }
-
-const cookieHeader = (jar) =>
-  Object.entries(jar)
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${k}=${v}`)
-    .join("; ");
-
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
 
 function hiddenFields(html, formIndex = 0) {
   const form = [...html.matchAll(/<form[\s\S]*?<\/form>/g)][formIndex]?.[0] ?? "";
@@ -60,9 +36,7 @@ async function submit(path, html, data, jar = {}) {
 }
 
 const text = async (res) => decode(await res.text()).replace(/<!-- -->/g, "");
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
 
 try {
@@ -252,5 +226,4 @@ try {
   await db.end();
 }
 
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

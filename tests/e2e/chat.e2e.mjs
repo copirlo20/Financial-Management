@@ -1,13 +1,9 @@
-import { createRequire } from "node:module";
+import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one } from "./harness.mjs";
 
 // The chat assistant (/api/chat). The AI API is replaced by tests/mock-ai.mjs: this suite queues
 // what the "model" says (text, or a request to call a tool) and reads back what the app sent it, which is
 // where the user's data shows up. Run through tests/run-e2e.mjs.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const MOCK = process.env.E2E_AI_MOCK_URL;
 // Which AI API the server under test talks to; the runner runs this suite once per provider.
 const PROVIDER = process.env.E2E_AI_PROVIDER ?? "anthropic";
@@ -15,29 +11,9 @@ if (!MOCK) {
   console.log("SKIP chat: needs the runner's own server, which is wired to the stand-in Claude API");
   process.exit(0);
 }
-const STAMP = Date.now();
 const A = `e2e-chat-a-${STAMP}@example.com`;
 const B = `e2e-chat-b-${STAMP}@example.com`;
 const C = `e2e-chat-c-${STAMP}@example.com`;
-const PASSWORD = "abc12345";
-let failures = 0;
-
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
-const cookieHeader = (jar) => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
-async function registerUser(email, name) {
-  const html = await (await fetch(BASE + "/register")).text();
-  const form = [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]).find((f) => f.includes('name="confirmPassword"'));
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) body.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  for (const [k, v] of Object.entries({ name, email, password: PASSWORD, confirmPassword: PASSWORD })) body.append(k, v);
-  const res = await fetch(BASE + "/register", { method: "POST", body, redirect: "manual", headers: { origin: BASE } });
-  return Object.fromEntries(res.headers.getSetCookie().map((c) => c.split(";")[0]).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)]));
-}
 
 const queue = (answers) => fetch(`${MOCK}/__mock/queue`, { method: "POST", body: JSON.stringify(answers) });
 const sent = async () => (await fetch(`${MOCK}/__mock/requests`)).json();
@@ -58,9 +34,7 @@ async function chat(jar, body) {
 // The tool results the app sent back to the model in the latest request, parsed.
 const toolResults = (request) => request.messages.at(-1).content.filter((block) => block.type === "tool_result");
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 
 try {
   const jarA = await registerUser(A, "Chat An");
@@ -208,5 +182,4 @@ try {
   await queue([]);
 }
 
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

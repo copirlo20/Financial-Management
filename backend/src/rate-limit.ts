@@ -1,4 +1,5 @@
 import { prisma } from "@fm/database";
+import { DAY_MS, MINUTE_MS } from "./time";
 
 // Counters per key and fixed time window, kept in the database so they survive restarts and are shared
 // by every backend process. A window starts at a multiple of its length since the epoch.
@@ -33,13 +34,13 @@ export async function used(key: string, windowMs: number): Promise<number> {
 // Whole minutes until the current window ends (at least 1), for "try again in N minutes".
 export function minutesLeft(windowMs: number): number {
   const end = windowStart(windowMs).getTime() + windowMs;
-  return Math.max(1, Math.ceil((end - Date.now()) / 60_000));
+  return Math.max(1, Math.ceil((end - Date.now()) / MINUTE_MS));
 }
 
 // Counters only matter inside their window; the longest window in use is one day.
 export async function pruneRateLimits(): Promise<number> {
   const { count } = await prisma.rateLimit.deleteMany({
-    where: { windowStart: { lt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) } },
+    where: { windowStart: { lt: new Date(Date.now() - 2 * DAY_MS) } },
   });
   return count;
 }

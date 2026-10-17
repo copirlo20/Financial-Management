@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { DocumentFormState } from "@/app/actions/imports";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -53,11 +54,7 @@ export function DocumentForm({ action, expenseCategories, incomeCategories, defa
   return (
     <form action={formAction} className="grid gap-4 [&>*]:min-w-0">
       <FormNavigationMarker />
-      {state?.message && (
-        <p role="alert" className="text-sm whitespace-pre-line text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} className="whitespace-pre-line" />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {select("expenseCategoryId", t("Danh mục cho khoản chi"), expenseCategories)}

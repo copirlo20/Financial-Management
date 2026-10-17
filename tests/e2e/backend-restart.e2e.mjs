@@ -1,21 +1,17 @@
 import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
 import net from "node:net";
 import path from "node:path";
+import { root, check, report, decode, readCookies, cookieHeader, db, sleep } from "./harness.mjs";
 
 // What the frontend does while the backend restarts (a code change in development, a deploy in production):
 // calls wait for it to come back instead of failing, and nobody is signed out because of it.
 // The suite starts a second pair of servers of its own, so that stopping and starting the backend does not
 // disturb the other suites; it therefore needs the runner's servers (and their build).
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
 if (!process.env.E2E_AI_MOCK_URL) {
   console.log("SKIP backend-restart: needs the runner's own servers, which build and start the frontend");
   process.exit(0);
 }
-const { Client } = createRequire(root + "package.json")("pg");
 
 const basePort = Number(new URL(process.env.E2E_BASE_URL).port || 80);
 const FRONT = basePort + 30;
@@ -23,19 +19,6 @@ const BACK = basePort + 130;
 const front = `http://localhost:${FRONT}`;
 const backHealth = `http://127.0.0.1:${BACK}/api/health`;
 const EMAIL = `e2e-restart-${Date.now()}@example.com`;
-
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
-function readCookies(res, jar = {}) {
-  for (const header of res.headers.getSetCookie()) { const pair = header.split(";")[0]; const i = pair.indexOf("="); jar[pair.slice(0, i).trim()] = pair.slice(i + 1); }
-  return jar;
-}
 
 const children = new Set();
 function startBackend() {
@@ -71,7 +54,6 @@ async function stopBackend(child) {
   await waitUntil(backendDown, "the backend to stop");
 }
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
 
 try {
@@ -169,5 +151,4 @@ try {
   await db.query(`delete from users where email = $1`, [EMAIL]).catch(() => {});
   await db.end().catch(() => {});
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

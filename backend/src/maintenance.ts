@@ -1,6 +1,8 @@
 import { prisma } from "@fm/database";
+import { positiveIntegerFromEnv } from "./env";
 import { deleteImportFile, listImportFiles } from "./imports/storage";
 import { pruneRateLimits } from "./rate-limit";
+import { DAY_MS, HOUR_MS } from "./time";
 
 // Housekeeping that runs while the backend is up: once shortly after start, then every hour
 // (MAINTENANCE_INTERVAL_MS changes that; the tests make it short).
@@ -8,10 +10,9 @@ import { pruneRateLimits } from "./rate-limit";
 // An upload that is never confirmed or cancelled would otherwise keep the bank statement on disk, and
 // the rows the assistant read in the database, for ever. After PENDING_IMPORT_TTL_MS both are removed,
 // together with any statement file that no import refers to (left behind by a crash, for example).
-const PENDING_IMPORT_TTL_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
+const PENDING_IMPORT_TTL_MS = DAY_MS;
 
-export async function removeStaleImports(): Promise<{ batches: number; files: number }> {
+async function removeStaleImports(): Promise<{ batches: number; files: number }> {
   const cutoff = new Date(Date.now() - PENDING_IMPORT_TTL_MS);
   const stale = await prisma.importBatch.findMany({
     where: { status: "PENDING", createdAt: { lt: cutoff } },
@@ -57,8 +58,7 @@ async function runOnce(): Promise<void> {
 }
 
 export function startMaintenance(): void {
-  const value = Number(process.env.MAINTENANCE_INTERVAL_MS);
-  const interval = Number.isInteger(value) && value > 0 ? value : DEFAULT_INTERVAL_MS;
+  const interval = positiveIntegerFromEnv("MAINTENANCE_INTERVAL_MS", HOUR_MS);
   setTimeout(runOnce, Math.min(interval, 30_000)).unref();
   setInterval(runOnce, interval).unref();
 }

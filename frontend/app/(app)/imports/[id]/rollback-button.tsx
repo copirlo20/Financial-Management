@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { rollbackImport } from "@/app/actions/imports";
 import { ConfirmButton } from "@/components/confirm-button";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 
 export function RollbackButton({ id, count }: { id: string; count: number }) {
@@ -23,11 +24,7 @@ export function RollbackButton({ id, count }: { id: string; count: number }) {
       >
         {pending ? t("Đang hoàn tác...") : t("Hoàn tác lần nhập này")}
       </ConfirmButton>
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
     </form>
   );
 }

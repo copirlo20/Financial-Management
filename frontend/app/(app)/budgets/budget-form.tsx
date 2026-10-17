@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import type { BudgetFormState } from "@/app/actions/budgets";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -28,11 +29,7 @@ export function BudgetForm({ action, currency, create, defaults, cancelHref }: P
   return (
     <form action={formAction} className="grid gap-4">
       {!create && <FormNavigationMarker />}
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
       {state?.success && (
         <p role="status" className="text-sm text-muted-foreground">{t("Đã đặt ngân sách.")}</p>
       )}

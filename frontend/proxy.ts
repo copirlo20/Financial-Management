@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, type IssuedTokens } from "@fm/shared/auth";
+import { BACKEND_URL } from "@/lib/api/backend-url";
 import { fetchBackend } from "@/lib/api/retry";
 import { authCookies, clearedAuthCookies } from "@/lib/auth/cookies";
 
-const BACKEND_URL = (process.env.BACKEND_URL ?? "http://127.0.0.1:4000").replace(/\/$/, "");
 const PUBLIC_PATHS = ["/login", "/register"];
 
 function isPublicPath(pathname: string): boolean {

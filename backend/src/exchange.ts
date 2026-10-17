@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma, prisma } from "@fm/database";
 import { SUPPORTED_CURRENCIES } from "@fm/shared/currencies";
 import { RATE_BASE } from "@fm/shared/rates";
+import { HOUR_MS, MINUTE_MS } from "./time";
 
 const BASE = RATE_BASE;
 
@@ -10,8 +11,8 @@ const BASE = RATE_BASE;
 const PROVIDER_URL = "https://open.er-api.com/v6/latest/USD";
 
 // The provider publishes daily, so asking more often than this only returns the same numbers.
-const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const MANUAL_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 6 * HOUR_MS;
+const MANUAL_REFRESH_INTERVAL_MS = 10 * MINUTE_MS;
 const FETCH_TIMEOUT_MS = 5000;
 
 type Db = Pick<Prisma.TransactionClient, "$queryRaw">;

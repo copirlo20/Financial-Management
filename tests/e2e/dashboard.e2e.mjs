@@ -1,42 +1,10 @@
-import { createRequire } from "node:module";
+import { STAMP, check, report, clean, get, page, registerUser, db, one } from "./harness.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const STAMP = Date.now();
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const clean = (s) => decode(s.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "")).replace(/<!-- -->/g, "").replace(/\u00a0|\u202f/g, " ");
 // Visible text only, tags collapsed to " | " so table cells can be matched in order.
 const cells = (s) => clean(s).replace(/<[^>]+>/g, "|").replace(/\|+/g, " | ");
-function readCookies(res, jar) {
-  for (const header of res.headers.getSetCookie()) { const pair = header.split(";")[0]; const i = pair.indexOf("="); jar[pair.slice(0, i).trim()] = pair.slice(i + 1); }
-  return jar;
-}
-const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
-const page = async (path, jar) => (await get(path, jar)).text();
-async function registerUser(email, name) {
-  const html = await page("/register");
-  const form = html.match(/<form[\s\S]*?<\/form>/)[0];
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) body.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  for (const [k, v] of Object.entries({ name, email, password: "abc12345", confirmPassword: "abc12345" })) body.append(k, v);
-  return readCookies(await fetch(BASE + "/register", { method: "POST", body, redirect: "manual", headers: { origin: BASE } }), {});
-}
-
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 
 const M = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date()).slice(0, 7);
 const shift = (month, delta) => { const d = new Date(`${month}-01T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() + delta); return d.toISOString().slice(0, 7); };
@@ -115,5 +83,4 @@ try {
   await db.query(`delete from users where email = any($1)`, [[A, B]]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

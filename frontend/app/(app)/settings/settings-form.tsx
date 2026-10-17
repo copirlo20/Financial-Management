@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { SUPPORTED_CURRENCIES } from "@fm/shared/currencies";
 import { LOCALES, LOCALE_LABELS } from "@fm/shared/i18n/config";
 import { updateSettings } from "@/app/actions/settings";
+import { CurrencyOptions } from "@/components/currency-options";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,7 @@ export function SettingsForm({ defaults }: Props) {
 
   return (
     <form action={formAction} className="grid gap-4">
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message)}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
       {state?.success && (
         <p role="status" className="text-sm text-muted-foreground">{t("Đã lưu cài đặt.")}</p>
       )}
@@ -73,11 +70,7 @@ export function SettingsForm({ defaults }: Props) {
           aria-invalid={Boolean(state?.errors?.defaultCurrency)}
           aria-describedby="st-currency-hint st-currency-error"
         >
-          {SUPPORTED_CURRENCIES.map((code) => (
-            <option key={code} value={code}>
-              {code}
-            </option>
-          ))}
+          <CurrencyOptions />
         </NativeSelect>
         <p id="st-currency-hint" className="text-xs text-muted-foreground">{t("Báo cáo, tổng quan và ngân sách được quy về tiền tệ này. Khi đổi, số liệu cũ được quy đổi lại theo tỷ giá của ngày giao dịch, và hạn mức ngân sách được quy đổi theo tỷ giá hiện tại.")}</p>
         <FieldError id="st-currency-error" messages={state?.errors?.defaultCurrency} />

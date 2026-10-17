@@ -1,21 +1,7 @@
-import { createRequire } from "node:module";
+import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one } from "./harness.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const STAMP = Date.now();
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const clean = (s) => decode(s.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "")).replace(/<!-- -->/g, "").replace(/\u00a0|\u202f/g, " ");
 // Everything a reader sees or a screen reader announces: text nodes plus label-like attributes.
 const visible = (s) => {
   const c = clean(s);
@@ -23,32 +9,10 @@ const visible = (s) => {
   return (c.replace(/<[^>]+>/g, " ") + " " + attrs.join(" ")).replaceAll("Ngôn ngữ / Language", "").replace("Tiếng Việt", ""); // language names stay in their own language
 };
 const vietnameseIn = (s) => [...new Set(visible(s).match(/[^\s|·()]*[À-ỹ][^\s|·()]*/g) ?? [])];
-function readCookies(res, jar) {
-  for (const header of res.headers.getSetCookie()) { const pair = header.split(";")[0]; const i = pair.indexOf("="); jar[pair.slice(0, i).trim()] = pair.slice(i + 1); }
-  return jar;
-}
-const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
-const page = async (path, jar) => (await get(path, jar)).text();
-function formWith(html, marker) {
-  const form = [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]).find((f) => f.includes(marker));
-  if (!form) throw new Error(`no form containing ${marker}`);
-  return form;
-}
-async function submit(path, form, data, jar) {
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) {
-    const name = decode(tag.match(/name="([^"]*)"/)?.[1] ?? "");
-    if (name && !(name in data)) body.append(name, decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  }
-  for (const [k, v] of Object.entries(data)) body.append(k, v);
-  return fetch(BASE + path, { method: "POST", body, redirect: "manual", headers: { cookie: cookieHeader(jar), origin: BASE } });
-}
 const text = async (res) => clean(await res.text());
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
+
 const TODAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
 const usdVnd = async (date = TODAY) => Number((await one(`select rate from exchange_rates where "baseCurrency" = 'USD' and "quoteCurrency" = 'VND' order by (date > $1::date), abs(date - $1::date) limit 1`, [date])).rate);
 const near = (actual, expected, tolerance = 0.011) => Math.abs(Number(actual) - expected) <= tolerance;
@@ -275,5 +239,4 @@ try {
   await db.query(`delete from exchange_rates where "isManual" = true and "quoteCurrency" = 'THB' and (rate = 31.5 or rate = 99.123456)`);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

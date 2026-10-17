@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { SUPPORTED_CURRENCIES } from "@fm/shared/currencies";
 import type { GoalFormState } from "@/app/actions/savings";
+import { CurrencyOptions } from "@/components/currency-options";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -27,11 +28,7 @@ export function GoalForm({ action, mode, defaults, cancelHref }: Props) {
   return (
     <form action={formAction} className="grid gap-4">
       <FormNavigationMarker />
-      {state?.message && (
-        <p role="alert" className="text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} />
 
       <div className="grid gap-2">
         <Label htmlFor="goal-name">{t("Tên mục tiêu")}</Label>
@@ -74,11 +71,7 @@ export function GoalForm({ action, mode, defaults, cancelHref }: Props) {
             aria-invalid={Boolean(state?.errors?.currency)}
             aria-describedby="goal-currency-error"
           >
-            {SUPPORTED_CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
+            <CurrencyOptions />
           </NativeSelect>
         ) : (
           <>

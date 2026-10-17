@@ -66,5 +66,5 @@ Hai loại bộ: `tests/e2e/*.e2e.mjs` gọi qua HTTP như trình duyệt không
 
 Trình duyệt giả lập đôi khi treo khi trang bị đánh dấu "ẩn" (`visibilityState = hidden`); chạy lại, và xem các dòng `at abort:` trong kết quả để biết nó dừng ở đâu.
 
-Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận.
+Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận. Lấy phần dùng chung từ `tests/e2e/harness.mjs` (`check`, `report`, `page`, `formWith`, `submit`, `registerUser`, `db`, `one`…), kết nối database bằng `await db.connect()`, đóng trong `finally` và kết thúc file bằng `report()`.
 

@@ -51,17 +51,17 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `proxy.ts` | Chạy trước mọi yêu cầu: làm mới access token hết hạn, đẩy khách chưa đăng nhập về `/login`, đặt `Content-Security-Policy` (nonce) và HSTS |
 | `next.config.ts` | Header bảo mật cố định, giới hạn tải lên của Server Action, `allowedDevOrigins` (tự lấy mọi IPv4 của máy) |
 | `instrumentation-client.ts` | Chạy trong trình duyệt trước khi trang hydrate. Lúc phát triển, bỏ cảnh báo hydration chỉ do Chrome trên iPhone gắn thuộc tính `__gcr…` cho tính năng tự điền; mọi khác biệt khác vẫn được báo |
-| `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client; `wire.ts` khôi phục số thập phân và ngày |
+| `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
-| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục… |
+| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`)… |
 | `components/ui/` | Thành phần nền kiểu shadcn/ui: `button`, `card`, `input`, `label`, `alert-dialog`, `chart` |
 
 ## backend/
 
 | Thư mục / file | Vai trò |
 | --- | --- |
-| `src/server.ts`, `app.ts`, `routes.ts`, `env.ts` | Khởi động, middleware (đọc JSON và file, nạp người dùng và ngữ cảnh), **bảng toàn bộ route** (`/api/...`), nạp `.env` ở thư mục gốc |
+| `src/server.ts`, `app.ts`, `routes.ts`, `env.ts`, `time.ts` | Khởi động, middleware (đọc JSON và file, nạp người dùng và ngữ cảnh), **bảng toàn bộ route** (`/api/...`), nạp `.env` ở thư mục gốc và đọc giới hạn dạng số từ đó (`positiveIntegerFromEnv`), hằng thời gian (`MINUTE_MS`, `HOUR_MS`, `DAY_MS`) |
 | `src/http/` | Ngữ cảnh yêu cầu (`AsyncLocalStorage`: người dùng, ngôn ngữ, địa chỉ), `command()` và `view()`, mã hóa JSON (`$decimal`, `$date`), lỗi HTTP |
 | `src/handlers/` | Thao tác **ghi** (tạo, sửa, xóa), mỗi file một nhóm nghiệp vụ |
 | `src/views/` | Truy vấn **đọc** cho từng trang |
@@ -98,6 +98,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | --- | --- |
 | `run-e2e.mjs` | Trình chạy: build frontend, dựng backend và frontend trên cổng riêng cùng máy chủ AI giả, chạy từng bộ, dọn dữ liệu. Dựng thêm một bản app dùng OpenAI để chạy lại các bộ AI |
 | `e2e/*.e2e.mjs` | Bộ kiểm thử qua HTTP như trình duyệt không có JavaScript (biểu mẫu, cookie, chuyển hướng), kiểm cả trang lẫn database |
+| `e2e/harness.mjs` | Phần dùng chung của các bộ e2e: cấu hình, `check()`/`report()`, đọc trang và form, gửi form (`submit`, cả file), cookie, đăng ký người dùng, kết nối database |
 | `browser/*.browser.mjs`, `cdp.mjs` | Bộ kiểm thử trong Edge/Chrome thật qua DevTools Protocol: biểu đồ, modal, giao diện tối, điện thoại |
 | `mock-ai.mjs` | Máy chủ giả của Claude và OpenAI: không bao giờ gọi API thật |
 | `pdf-text.mjs` | Đọc chữ trong PDF do app xuất, để kiểm số liệu |

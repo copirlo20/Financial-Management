@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { useActionState } from "react";
 import { deleteImport } from "@/app/actions/imports";
 import { ConfirmButton } from "@/components/confirm-button";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 
 type Props = {
@@ -57,11 +58,7 @@ export function DeleteImportButton({ id, fileName, transactionCount, appearance 
           {pending ? t("Đang xóa...") : t("Xóa lần nhập này")}
         </ConfirmButton>
       )}
-      {state?.message && (
-        <p role="alert" className="basis-full text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} className="basis-full" />
     </form>
   );
 }

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { DeleteCategoryState } from "@/app/actions/categories";
 import { ConfirmButton } from "@/components/confirm-button";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 
 type Props = {
@@ -29,11 +30,7 @@ export function DeleteCategoryButton({ action, id, name }: Props) {
       >
         {pending ? t("Đang xóa...") : t("Xóa")}
       </ConfirmButton>
-      {state?.message && (
-        <p role="alert" className="basis-full text-sm text-destructive">
-          {t(state.message ?? "")}
-        </p>
-      )}
+      <FormMessage message={state?.message} className="basis-full" />
     </form>
   );
 }

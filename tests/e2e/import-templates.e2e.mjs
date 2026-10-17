@@ -1,40 +1,10 @@
 import { createRequire } from "node:module";
+import { root, check, report, decode, get, page, formWith, submit, db, one } from "./harness.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
 const require = createRequire(root + "package.json");
-const { Client } = require("pg");
 const ExcelJS = require("exceljs");
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const EMAIL = `e2e-tpl-${Date.now()}@example.com`;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-const cookieHeader = (jar) => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
-const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
-const page = async (path, jar) => (await get(path, jar)).text();
-function formWith(html, marker) {
-  const form = [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]).find((f) => f.includes(marker));
-  if (!form) throw new Error(`no form containing ${marker}`);
-  return form;
-}
-async function submit(path, form, data, jar) {
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) {
-    const name = decode(tag.match(/name="([^"]*)"/)?.[1] ?? "");
-    if (name && !(name in data)) body.append(name, decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  }
-  for (const [k, v] of Object.entries(data)) {
-    if (v && typeof v === "object") body.append(k, new Blob([v.bytes]), v.name);
-    else body.append(k, v);
-  }
-  return fetch(BASE + path, { method: "POST", body, redirect: "manual", headers: { cookie: cookieHeader(jar), origin: BASE } });
-}
 function formDefaults(form) {
   const values = {};
   for (const [select] of form.matchAll(/<select[\s\S]*?<\/select>/g)) {
@@ -46,9 +16,7 @@ function formDefaults(form) {
   return values;
 }
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 
 try {
   const reg = await page("/register");
@@ -96,5 +64,4 @@ try {
   await db.query(`delete from users where email = $1`, [EMAIL]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

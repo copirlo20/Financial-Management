@@ -9,7 +9,7 @@ import { decode } from "@/lib/api/wire";
 
 // Who the backend says is signed in, asked once per request. The backend checks the token and the
 // account on every call, so a disabled or deleted account loses access immediately.
-export const getSession = cache(async (): Promise<SessionView | null> => {
+const getSession = cache(async (): Promise<SessionView | null> => {
   if (!(await cookies()).get(ACCESS_TOKEN_COOKIE)?.value) return null;
   const response = await backendFetch("/me");
   if (response.status === 401) return null;

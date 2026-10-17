@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
 import { FieldError } from "@/components/field-error";
+import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +30,7 @@ export function LoginForm({ next }: { next?: string }) {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="grid gap-4">
-          {state?.message && (
-            <p role="alert" className="text-sm text-destructive">
-              {t(state.message ?? "")}
-            </p>
-          )}
+          <FormMessage message={state?.message} />
           {next && <input type="hidden" name="next" value={next} />}
 
           <div className="grid gap-2">

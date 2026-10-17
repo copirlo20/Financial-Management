@@ -13,7 +13,7 @@ const PARTS_IN_PARALLEL = 4;
 const CONTEXT_ROWS = 15;
 const CELL_LENGTH = 200;
 // Larger spreadsheets are left to manual column mapping: reading them row by row would take too many requests.
-export const MAX_AI_ROWS = 3000;
+const MAX_AI_ROWS = 3000;
 const ANALYSES_PER_HOUR = 20;
 
 export type AiCategory = { id: string; label: string; type: "EXPENSE" | "INCOME" };
