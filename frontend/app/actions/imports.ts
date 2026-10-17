@@ -8,7 +8,7 @@ import type {
   RollbackState,
   UploadFormState,
 } from "@fm/backend/handlers/imports";
-import { command, idSegment, upload } from "@/lib/api/client";
+import { command, formCommand, formUpload, idSegment } from "@/lib/api/client";
 
 export type { DocumentFormState, MappingFormState, RollbackState, UploadFormState };
 
@@ -18,7 +18,7 @@ export async function uploadImport(_prev: UploadFormState, formData: FormData): 
     const value = formData.get(name);
     return typeof value === "string" ? value : undefined;
   };
-  return upload("/imports", file instanceof File ? file : null, { accountId: text("accountId"), useAi: text("useAi") });
+  return formUpload("/imports", file instanceof File ? file : null, { accountId: text("accountId"), useAi: text("useAi") }, formData);
 }
 
 export async function confirmImport(
@@ -26,7 +26,7 @@ export async function confirmImport(
   _prev: MappingFormState,
   formData: FormData,
 ): Promise<MappingFormState> {
-  return command("POST", `/imports/${encodeURIComponent(batchId)}/confirm`, formData);
+  return formCommand("POST", `/imports/${encodeURIComponent(batchId)}/confirm`, formData);
 }
 
 export async function confirmDocumentImport(
@@ -34,7 +34,7 @@ export async function confirmDocumentImport(
   _prev: DocumentFormState,
   formData: FormData,
 ): Promise<DocumentFormState> {
-  return command("POST", `/imports/${encodeURIComponent(batchId)}/confirm-document`, formData);
+  return formCommand("POST", `/imports/${encodeURIComponent(batchId)}/confirm-document`, formData);
 }
 
 export async function cancelImport(formData: FormData): Promise<void> {
@@ -42,9 +42,9 @@ export async function cancelImport(formData: FormData): Promise<void> {
 }
 
 export async function deleteImport(_prev: RollbackState, formData: FormData): Promise<RollbackState> {
-  return command("DELETE", `/imports/${idSegment(formData)}`, formData);
+  return formCommand("DELETE", `/imports/${idSegment(formData)}`, formData);
 }
 
 export async function rollbackImport(_prev: RollbackState, formData: FormData): Promise<RollbackState> {
-  return command("POST", `/imports/${idSegment(formData)}/rollback`, formData);
+  return formCommand("POST", `/imports/${idSegment(formData)}/rollback`, formData);
 }

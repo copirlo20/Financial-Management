@@ -3,12 +3,12 @@
 // Server Actions are the forms' entry points. Each one only passes the submitted form on to the
 // backend route that does the work (validation, permission checks and the change itself live there).
 import type { AccountFormState } from "@fm/backend/handlers/accounts";
-import { command, idSegment } from "@/lib/api/client";
+import { command, formCommand, idSegment } from "@/lib/api/client";
 
 export type { AccountFormState };
 
 export async function createAccount(_prev: AccountFormState, formData: FormData): Promise<AccountFormState> {
-  return command("POST", "/accounts", formData);
+  return formCommand("POST", "/accounts", formData);
 }
 
 export async function updateAccount(
@@ -16,7 +16,7 @@ export async function updateAccount(
   _prev: AccountFormState,
   formData: FormData,
 ): Promise<AccountFormState> {
-  return command("PUT", `/accounts/${encodeURIComponent(accountId)}`, formData);
+  return formCommand("PUT", `/accounts/${encodeURIComponent(accountId)}`, formData);
 }
 
 export async function archiveAccount(formData: FormData): Promise<void> {

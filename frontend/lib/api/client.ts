@@ -11,8 +11,8 @@ import {
   type CommandResult,
 } from "@fm/shared/wire";
 import { authCookies, clearedAuthCookies } from "@/lib/auth/cookies";
-import { getLanguage } from "@/lib/i18n/server";
-import { fetchBackend } from "./retry";
+import { getI18n, getLanguage } from "@/lib/i18n/server";
+import { BackendConnectionError, fetchBackend } from "./retry";
 import { decode } from "./wire";
 
 // Everything the frontend knows or changes goes through the backend's API. These calls are made by the
@@ -121,6 +121,42 @@ export async function upload<State>(path: string, file: File | null, query: Quer
     body: file ? await file.arrayBuffer() : new ArrayBuffer(0),
   });
   return finish<State>(response, `POST ${path}`);
+}
+
+// What a form's action may answer: every form state of this app can carry a message (and the values to
+// put back in the fields).
+type MessageState = { message?: string; values?: Record<string, string> } | undefined;
+
+// When the backend cannot be talked to, a form says so itself, keeping what was typed, instead of the page
+// turning into an error page. Whether the change may have been made decides what the person is told:
+// sending it again after a cut-off could make it twice.
+async function answerOnForm<State extends MessageState>(send: Promise<State>, formData?: FormData): Promise<State> {
+  try {
+    return await send;
+  } catch (error) {
+    if (!(error instanceof BackendConnectionError)) throw error;
+    console.error(error);
+    const { t } = await getI18n();
+    const values: Record<string, string> = {};
+    // Passwords are never sent back to the page, as the backend never does either.
+    for (const [name, value] of formData?.entries() ?? []) {
+      if (typeof value === "string" && !name.startsWith("$ACTION") && !/password/i.test(name)) values[name] = value;
+    }
+    const message = error.mayHaveRun
+      ? t("Mất kết nối tới máy chủ khi đang lưu. Thay đổi có thể đã được lưu hoặc chưa, hãy kiểm tra lại trước khi gửi lại.")
+      : t("Không kết nối được máy chủ nên chưa có gì thay đổi. Hãy thử lại sau giây lát.");
+    return { message, values } as State;
+  }
+}
+
+// command() for a form that shows its state (useActionState): connection failures come back as a message.
+export function formCommand<State extends MessageState>(method: Method, path: string, formData?: FormData): Promise<State> {
+  return answerOnForm(command<State>(method, path, formData), formData);
+}
+
+// upload() for a form that shows its state, in the same way.
+export function formUpload<State extends MessageState>(path: string, file: File | null, query: Query, formData?: FormData): Promise<State> {
+  return answerOnForm(upload<State>(path, file, query), formData);
 }
 
 // A record id taken from a submitted form, as a URL path segment. An empty or odd value still gives a

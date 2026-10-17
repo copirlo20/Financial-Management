@@ -32,12 +32,12 @@ E2E_PORT=3300 npm test            # đổi cổng nếu 3101 đang bị chiếm
 | `import-templates`           |    11    | File mẫu CSV và Excel                                                                                                                                                     |
 | `chat`                       |    35    | Chatbot: công cụ chỉ đọc, cách ly dữ liệu, giới hạn, lỗi                                                                                                                  |
 | `states`                     |    19    | Trạng thái rỗng, lỗi, không tìm thấy                                                                                                                                      |
-| `backend-restart`            |    5     | Backend khởi động lại: form và trang đợi backend trở lại, phiên không bị mất                                                                                              |
+| `backend-restart`            |    10    | Backend khởi động lại: form và trang (cả khi trang đang đọc dữ liệu) đợi backend trở lại, phiên không bị mất; backend tắt hẳn hoặc lệnh ghi bị cắt giữa chừng thì form báo lỗi ngay trên form, giữ dữ liệu đã nhập (trừ mật khẩu), không gửi lại lệnh |
 | `ui`                         |    47    | Trình duyệt thật: biểu đồ, modal xác nhận xóa (Hủy, Esc, Xóa), giao diện tối, khung chờ (cả khi bấm Quay lại), lọc không tải lại trang, tải sao kê, lỗi trang, khung chat |
 | `mobile`                     |    29    | Trình duyệt giả lập điện thoại: bố cục 320–740 px, thao tác chạm, bàn phím ảo                                                                                             |
 | `imports-ai` (openai)        |    50    | Bộ `imports-ai` chạy lại với bản app dùng OpenAI                                                                                                                          |
 | `chat` (openai)              |    35    | Bộ `chat` chạy lại với bản app dùng OpenAI                                                                                                                                |
-|                              | **685**  |                                                                                                                                                                           |
+|                              | **690**  |                                                                                                                                                                           |
 
 Hai bộ cuối cần **Edge hoặc Chrome**; không có trình duyệt thì chúng tự bỏ qua (đặt `E2E_BROWSER` nếu trình duyệt ở chỗ khác).
 

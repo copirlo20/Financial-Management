@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import net from "node:net";
 import path from "node:path";
 
 // What the frontend does while the backend restarts (a code change in development, a deploy in production):
@@ -114,12 +115,55 @@ try {
     `${page.status} ${page.headers.get("location") ?? ""}`);
   await waitUntil(backendUp, "the backend once more");
 
+  // ---------- A page opened with a valid session while the backend is down ----------
+  // Here the proxy has nothing to renew, so the page's own reads meet the closed port. Next.js hands a
+  // repeated GET of the same URL the first (failed) promise during a render, so this only passes if the
+  // retries really go out again.
+  const signedIn = { ...jar, ...renewed };
+  await stopBackend(backend);
+  setTimeout(() => { backend = startBackend(); }, 1500);
+  const reading = Date.now();
+  const read = await fetch(`${front}/dashboard`, { redirect: "manual", headers: { cookie: cookieHeader(signedIn) } });
+  const readHtml = await read.text();
+  check("a page whose data is read while the backend restarts waits for it and shows the page, not an error",
+    read.status === 200 && !readHtml.includes("Backend not reachable") && readHtml.includes("<main"),
+    `${read.status} after ${Date.now() - reading} ms`);
+  await waitUntil(backendUp, "the backend after the page");
+
   // ---------- The backend stays down ----------
   await stopBackend(backend);
   const down = await fetch(`${front}/dashboard`, { redirect: "manual", headers: { cookie: cookieHeader(expired) }, signal: AbortSignal.timeout(60_000) });
   const cleared = down.headers.getSetCookie().filter((cookie) => /^(access_token|refresh_token)=;|max-age=0/i.test(cookie));
   check("with the backend down for good the person is not signed out: no cookie is cleared", cleared.length === 0, cleared.join(" | "));
   check("and is not sent to the sign-in page", !(down.status >= 300 && down.status < 400 && (down.headers.get("location") ?? "").includes("/login")), `${down.status} ${down.headers.get("location") ?? ""}`);
+
+  // ---------- A form sent while the backend stays down ----------
+  const unreachable = await form("/login", { email: `nobody-${Date.now()}@example.com`, password: "wrong-password-1" });
+  const unreachableHtml = await unreachable.text();
+  check("a form sent while the backend stays down says so on the form, keeping what was typed, instead of an error page",
+    unreachable.status === 200 && unreachableHtml.includes("Không kết nối được máy chủ nên chưa có gì thay đổi.") && unreachableHtml.includes("nobody-"),
+    `${unreachable.status}`);
+  check("and the password typed is not sent back to the page", !unreachableHtml.includes("wrong-password-1"));
+
+  // ---------- A change whose connection is cut on its way ----------
+  // Something listens on the backend's port but cuts every connection, as a backend killed mid-request does.
+  let cuts = 0;
+  const cutter = net.createServer((socket) => {
+    socket.once("data", () => {
+      cuts++;
+      socket.resetAndDestroy();
+    });
+  });
+  await new Promise((resolve) => cutter.listen(BACK, "127.0.0.1", resolve));
+  try {
+    const cut = await form("/login", { email: `nobody-${Date.now()}@example.com`, password: "wrong-password-1" });
+    const cutHtml = await cut.text();
+    check("a change cut off on its way says it may or may not have been made, instead of an error page",
+      cut.status === 200 && cutHtml.includes("Mất kết nối tới máy chủ khi đang lưu."), `${cut.status}`);
+    check("and it is not sent again, as it may already have been made", cuts === 1, `${cuts} attempts reached the port`);
+  } finally {
+    await new Promise((resolve) => cutter.close(resolve));
+  }
 } finally {
   for (const child of children) child.kill();
   await db.query(`delete from users where email = $1`, [EMAIL]).catch(() => {});

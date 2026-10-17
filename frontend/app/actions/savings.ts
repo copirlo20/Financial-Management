@@ -7,16 +7,16 @@ import type {
   DeleteContributionState,
   GoalFormState,
 } from "@fm/backend/handlers/savings";
-import { command, idSegment } from "@/lib/api/client";
+import { command, formCommand, idSegment } from "@/lib/api/client";
 
 export type { ContributionFormState, DeleteContributionState, GoalFormState };
 
 export async function createGoal(_prev: GoalFormState, formData: FormData): Promise<GoalFormState> {
-  return command("POST", "/savings", formData);
+  return formCommand("POST", "/savings", formData);
 }
 
 export async function updateGoal(goalId: string, _prev: GoalFormState, formData: FormData): Promise<GoalFormState> {
-  return command("PUT", `/savings/${encodeURIComponent(goalId)}`, formData);
+  return formCommand("PUT", `/savings/${encodeURIComponent(goalId)}`, formData);
 }
 
 export async function archiveGoal(formData: FormData): Promise<void> {
@@ -36,12 +36,12 @@ export async function addContribution(
   _prev: ContributionFormState,
   formData: FormData,
 ): Promise<ContributionFormState> {
-  return command("POST", `/savings/${encodeURIComponent(goalId)}/contributions`, formData);
+  return formCommand("POST", `/savings/${encodeURIComponent(goalId)}/contributions`, formData);
 }
 
 export async function deleteContribution(
   _prev: DeleteContributionState,
   formData: FormData,
 ): Promise<DeleteContributionState> {
-  return command("DELETE", `/savings/contributions/${idSegment(formData)}`, formData);
+  return formCommand("DELETE", `/savings/contributions/${idSegment(formData)}`, formData);
 }

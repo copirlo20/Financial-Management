@@ -700,4 +700,8 @@ export const en: Record<string, string> = {
     "Sign out of every device?",
   "Kể cả thiết bị này. Bạn sẽ phải đăng nhập lại trên mọi thiết bị.":
     "This one included. You will have to sign in again on every device.",
+  "Mất kết nối tới máy chủ khi đang lưu. Thay đổi có thể đã được lưu hoặc chưa, hãy kiểm tra lại trước khi gửi lại.":
+    "The connection to the server was lost while saving. The change may or may not have been saved: check before sending it again.",
+  "Không kết nối được máy chủ nên chưa có gì thay đổi. Hãy thử lại sau giây lát.":
+    "Could not reach the server, so nothing was changed. Try again in a moment.",
 };

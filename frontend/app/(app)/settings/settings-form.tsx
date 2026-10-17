@@ -20,6 +20,11 @@ export function SettingsForm({ defaults }: Props) {
 
   return (
     <form action={formAction} className="grid gap-4">
+      {state?.message && (
+        <p role="alert" className="text-sm text-destructive">
+          {t(state.message)}
+        </p>
+      )}
       {state?.success && (
         <p role="status" className="text-sm text-muted-foreground">{t("Đã lưu cài đặt.")}</p>
       )}
