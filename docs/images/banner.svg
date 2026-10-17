@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-labelledby="title desc">
+  <title id="title">Financial Management</title>
+  <desc id="desc">Banner của ứng dụng quản lý tài chính cá nhân Financial Management</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2d0f63"/>
+      <stop offset="0.55" stop-color="#6a1fb0"/>
+      <stop offset="1" stop-color="#c026a8"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.75"/>
+    </linearGradient>
+    <clipPath id="round"><rect width="1200" height="300" rx="28"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <rect width="1200" height="300" fill="url(#bg)"/>
+
+    <!-- slow drifting circles -->
+    <circle cx="1040" cy="40" r="170" fill="#ffffff" opacity="0.08">
+      <animate attributeName="cy" values="40;70;40" dur="9s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="140" cy="300" r="210" fill="#ffffff" opacity="0.06">
+      <animate attributeName="cy" values="300;270;300" dur="11s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="640" cy="330" r="120" fill="#ffffff" opacity="0.05">
+      <animate attributeName="cx" values="640;700;640" dur="13s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- bar chart that grows in and breathes -->
+    <g transform="translate(838 62)">
+      <rect x="0"   y="130" width="34" height="0" rx="6" fill="url(#bar)">
+        <animate attributeName="y" values="130;86;92;86" dur="3.2s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+        <animate attributeName="height" values="0;44;38;44" dur="3.2s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+      </rect>
+      <rect x="52"  y="130" width="34" height="0" rx="6" fill="url(#bar)">
+        <animate attributeName="y" values="130;60;66;60" dur="3.2s" begin="0.15s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+        <animate attributeName="height" values="0;70;64;70" dur="3.2s" begin="0.15s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+      </rect>
+      <rect x="104" y="130" width="34" height="0" rx="6" fill="url(#bar)">
+        <animate attributeName="y" values="130;98;104;98" dur="3.2s" begin="0.3s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+        <animate attributeName="height" values="0;32;26;32" dur="3.2s" begin="0.3s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+      </rect>
+      <rect x="156" y="130" width="34" height="0" rx="6" fill="#ffffff">
+        <animate attributeName="y" values="130;30;36;30" dur="3.2s" begin="0.45s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+        <animate attributeName="height" values="0;100;94;100" dur="3.2s" begin="0.45s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+      </rect>
+      <rect x="208" y="130" width="34" height="0" rx="6" fill="url(#bar)">
+        <animate attributeName="y" values="130;74;80;74" dur="3.2s" begin="0.6s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+        <animate attributeName="height" values="0;56;50;56" dur="3.2s" begin="0.6s" fill="freeze" calcMode="spline" keySplines="0.2 0.8 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;0.75;1"/>
+      </rect>
+      <rect x="-14" y="140" width="268" height="4" rx="2" fill="#ffffff" opacity="0.35"/>
+    </g>
+
+    <!-- logo mark -->
+    <g transform="translate(84 86)">
+      <rect width="72" height="72" rx="20" fill="#ffffff" fill-opacity="0.16" stroke="#ffffff" stroke-opacity="0.35"/>
+      <g transform="translate(18 20)" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M32 7V4a2 2 0 0 0-2-2H4a2 2 0 0 0 0 4h28a2 2 0 0 1 2 2v4"/>
+        <path d="M4 6v28a4 4 0 0 0 4 4h28a2 2 0 0 0 2-2v-8"/>
+        <path d="M38 20v8a2 2 0 0 1-2 2h-4a4 4 0 0 1 0-8h4a2 2 0 0 1 2 2z" transform="translate(0 -2)"/>
+      </g>
+    </g>
+
+    <!-- title -->
+    <text x="180" y="124" font-family="'Segoe UI', 'Be Vietnam Pro', Arial, sans-serif" font-size="54" font-weight="800" fill="#ffffff">Financial Management</text>
+    <text x="182" y="162" font-family="'Segoe UI', 'Be Vietnam Pro', Arial, sans-serif" font-size="22" fill="#ffffff" fill-opacity="0.86">Quản lý tài chính cá nhân · thu chi · ngân sách · tiết kiệm · trợ lý AI</text>
+
+    <!-- chips -->
+    <g font-family="'Segoe UI', 'Be Vietnam Pro', Arial, sans-serif" font-size="15" font-weight="600" fill="#ffffff">
+      <g transform="translate(84 210)"><rect width="118" height="36" rx="18" fill="#ffffff" fill-opacity="0.16"/><text x="59" y="24" text-anchor="middle">Next.js 16</text></g>
+      <g transform="translate(214 210)"><rect width="118" height="36" rx="18" fill="#ffffff" fill-opacity="0.16"/><text x="59" y="24" text-anchor="middle">Express 5</text></g>
+      <g transform="translate(344 210)"><rect width="118" height="36" rx="18" fill="#ffffff" fill-opacity="0.16"/><text x="59" y="24" text-anchor="middle">Prisma 7</text></g>
+      <g transform="translate(474 210)"><rect width="134" height="36" rx="18" fill="#ffffff" fill-opacity="0.16"/><text x="67" y="24" text-anchor="middle">PostgreSQL</text></g>
+      <g transform="translate(620 210)"><rect width="134" height="36" rx="18" fill="#ffffff" fill-opacity="0.16"/><text x="67" y="24" text-anchor="middle">Claude AI</text></g>
+    </g>
+  </g>
+</svg>

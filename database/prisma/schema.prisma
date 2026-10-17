@@ -1,0 +1,294 @@
+// Prisma schema — Financial Management
+// Thiết kế: docs/ARCHITECTURE.md. Luồng import: docs/import-flow.md.
+// Các ràng buộc Prisma không biểu diễn được (partial unique index, CHECK) nằm trong migration SQL.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum Locale {
+  vi
+  en
+}
+
+enum AccountType {
+  CASH
+  BANK
+  E_WALLET
+  CREDIT_CARD
+  OTHER
+}
+
+enum CategoryType {
+  EXPENSE
+  INCOME
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum TransactionSource {
+  MANUAL
+  IMPORT
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  ROLLED_BACK
+}
+
+enum TransferDirection {
+  OUT
+  IN
+}
+
+enum SavingsGoalStatus {
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+// ---------- Models ----------
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String
+  name            String
+  role            UserRole   @default(USER)
+  status          UserStatus @default(ACTIVE)
+  defaultCurrency String     @default("VND")
+  locale          Locale     @default(vi)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  savingsGoals  SavingsGoal[]
+  importBatches ImportBatch[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  // Một lần đăng nhập trên một thiết bị: giữ nguyên qua các lần xoay vòng token. Access token mang mã này,
+  // nên thu hồi phiên (đăng xuất, đổi mật khẩu) làm access token mất hiệu lực ngay.
+  sessionId String
+  expiresAt DateTime
+  rotatedAt DateTime? // đã được thay bằng token mới; còn dùng được trong cửa sổ ân hạn ngắn
+  revokedAt DateTime? // bị thu hồi hẳn (đăng xuất / nghi bị đánh cắp); không có ân hạn
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("refresh_tokens")
+}
+
+model Account {
+  id             String      @id @default(uuid())
+  userId         String
+  name           String
+  type           AccountType
+  currency       String
+  initialBalance Decimal     @db.Decimal(18, 2)
+  currentBalance Decimal     @db.Decimal(18, 2)
+  archivedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  importBatches ImportBatch[]
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Category {
+  id        String       @id @default(uuid())
+  userId    String? // null = category hệ thống (seed sẵn, dùng chung)
+  systemKey String?      @unique // chỉ category hệ thống có; UI dịch tên theo key, seed upsert theo key
+  parentId  String?
+  name      String
+  type      CategoryType
+  icon      String?
+  color     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent        Category?     @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: SetNull)
+  subcategories Category[]    @relation("CategoryToSubcategory")
+  transactions  Transaction[]
+  budgets       Budget[]
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Transaction {
+  id                      String             @id @default(uuid())
+  userId                  String
+  accountId               String
+  categoryId              String?
+  type                    TransactionType
+  amount                  Decimal            @db.Decimal(18, 2)
+  currency                String
+  amountInDefaultCurrency Decimal?           @db.Decimal(18, 2) // null = chưa có tỷ giá để quy đổi
+  exchangeRateUsed        Decimal?           @db.Decimal(24, 12)
+  date                    DateTime           @db.Date
+  note                    String?
+  source                  TransactionSource  @default(MANUAL)
+  importBatchId           String?
+  transferGroupId         String?
+  transferDirection       TransferDirection? // chỉ có ở giao dịch TRANSFER: OUT ở tài khoản nguồn, IN ở tài khoản đích
+  dedupeHash              String? // sha256(accountId + date + amount + description), chống trùng khi import
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([importBatchId])
+  @@index([transferGroupId])
+  @@index([dedupeHash])
+  @@map("transactions")
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  userId      String
+  categoryId  String? // null = ngân sách tổng của tháng
+  amountLimit Decimal  @db.Decimal(18, 2)
+  currency    String
+  periodStart DateTime @db.Date // luôn chuẩn hóa về ngày 1 của tháng
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // categoryId có thể NULL và PostgreSQL coi các NULL là khác nhau,
+  // nên ngân sách tổng (categoryId NULL) được chặn trùng bằng partial unique index trong migration.
+  @@unique([userId, categoryId, periodStart])
+  @@map("budgets")
+}
+
+model SavingsGoal {
+  id            String            @id @default(uuid())
+  userId        String
+  name          String
+  targetAmount  Decimal           @db.Decimal(18, 2)
+  currentAmount Decimal           @default(0) @db.Decimal(18, 2)
+  currency      String
+  deadline      DateTime?         @db.Date
+  status        SavingsGoalStatus @default(IN_PROGRESS)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions SavingsContribution[]
+
+  @@index([userId])
+  @@map("savings_goals")
+}
+
+model SavingsContribution {
+  id            String   @id @default(uuid())
+  savingsGoalId String
+  amount        Decimal  @db.Decimal(18, 2)
+  date          DateTime @db.Date
+  note          String?
+  createdAt     DateTime @default(now())
+
+  savingsGoal SavingsGoal @relation(fields: [savingsGoalId], references: [id], onDelete: Cascade)
+
+  @@index([savingsGoalId])
+  @@map("savings_contributions")
+}
+
+model ImportBatch {
+  id            String       @id @default(uuid())
+  userId        String
+  accountId     String
+  fileName      String
+  tempFileKey   String? // vị trí file tạm giữa bước upload và confirm; xóa sau khi confirm/rollback
+  columnMapping Json? // chỉ có sau bước confirm
+  aiAnalysis    Json? // kết quả trợ lý AI phân tích file lúc upload (backend/src/imports/analysis.ts); null nếu không dùng AI
+  status        ImportStatus @default(PENDING)
+  rowCount      Int          @default(0)
+  importedCount Int          @default(0)
+  skippedCount  Int          @default(0)
+  errorMessage  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([accountId])
+  @@map("import_batches")
+}
+
+model ExchangeRate {
+  id            String   @id @default(uuid())
+  baseCurrency  String
+  quoteCurrency String
+  rate          Decimal  @db.Decimal(18, 6)
+  date          DateTime @db.Date
+  isManual      Boolean  @default(false) // admin nhập tay; cập nhật tự động không ghi đè
+  createdAt     DateTime @default(now())
+
+  @@unique([baseCurrency, quoteCurrency, date])
+  @@map("exchange_rates")
+}
+
+// Bộ đếm theo khung thời gian cố định: chống dò mật khẩu, giới hạn đăng ký, hạn mức dùng AI.
+// key ví dụ "login:fail:<email>", "ai-tokens:user:<id>"; count có thể là số lần hoặc số token.
+model RateLimit {
+  key         String
+  windowStart DateTime @db.Timestamptz(3)
+  count       BigInt   @default(0)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
+}

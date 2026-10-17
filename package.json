@@ -1,0 +1,29 @@
+{
+  "name": "financial-management",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "database",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w frontend",
+    "start": "node scripts/dev.mjs --production",
+    "lint": "eslint tests scripts && npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "node tests/run-e2e.mjs",
+    "test:dev": "node tests/run-e2e.mjs --base http://localhost:3000",
+    "db:generate": "npm run generate -w database",
+    "db:migrate": "npm run migrate -w database",
+    "db:deploy": "npm run deploy -w database",
+    "db:seed": "npm run seed -w database"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.3.7",
+    "typescript": "^5"
+  }
+}

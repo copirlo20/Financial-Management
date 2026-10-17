@@ -1,0 +1,3 @@
+export const MAX_ACCOUNTS_PER_USER = 50;
+export const MAX_CATEGORIES_PER_USER = 200;
+export const MAX_SAVINGS_GOALS_PER_USER = 50;

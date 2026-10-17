@@ -1,0 +1,25 @@
+# Quản lý công việc
+- [x] 1. Auth: đăng ký, đăng nhập, đăng xuất, refresh token, bảo vệ route
+- [x] 2. Account/Ví: tạo, liệt kê, sửa, archive, xem số dư
+- [x] 3. Category: seed danh mục hệ thống, CRUD danh mục tùy chỉnh
+- [x] 4. Transaction: CRUD giao dịch thu/chi thủ công, tạo transfer giữa 2 tài khoản
+- [x] 5. Import CSV/Excel/PDF: upload, trợ lý AI (Claude/OpenAI) phân tích file & gợi ý danh mục, preview & mapping cột, confirm (dedupe), rollback batch
+- [x] 6. Budget: đặt ngân sách theo tháng/danh mục, cảnh báo khi gần/vượt hạn mức
+- [x] 7. Savings Goal: tạo mục tiêu tiết kiệm, ghi nhận contribution, theo dõi tiến độ
+- [x] 8. Dashboard & Report: tổng quan thu/chi/số dư, biểu đồ theo danh mục, xu hướng theo thời gian
+- [x] 9. Đa ngôn ngữ & đa tiền tệ: chuyển đổi giao diện vi/en, quy đổi hiển thị theo currency đã chọn
+- [x] 10. Hoàn thiện: trạng thái loading/rỗng/lỗi, responsive, kiểm thử luồng chính
+- [x] 11. Giao diện mới: bảng màu tím, sidebar (máy tính) + thanh điều hướng dưới (điện thoại), thẻ số dư, trang đăng nhập
+- [x] 12. Nhập sao kê: xóa lần nhập cùng file và các giao dịch của nó
+- [x] 13. Trợ lý chatbot AI: trả lời từ dữ liệu của người dùng (chỉ đọc) và hướng dẫn dùng app
+- [x] 14. Tách chương trình: frontend (Next.js), backend (Express API), database (Prisma) thành các thư mục riêng
+- [x] 15. Bảo mật: chặn chuyển hướng ra ngoài, giới hạn đăng nhập/đăng ký, chống "zip bomb", ngân sách chi phí AI, CSP và header bảo mật, dọn sao kê tạm, thu hồi phiên, đổi mật khẩu
+- [x] 16. Thêm OpenAI (GPT) làm nhà cung cấp AI thứ hai cho đọc sao kê và chatbot, chọn bằng AI_PROVIDER
+- [x] 17. Xuất sao kê PDF theo khoảng thời gian tùy chọn (một ví hoặc tất cả), bố cục theo mẫu sao kê ngân hàng: thông tin chủ tài khoản, tóm tắt kỳ (số dư đầu kỳ, ghi nợ, ghi có, số dư cuối kỳ), bảng giao dịch chi tiết
+- [x] 18. Giao diện tối: nút đổi sáng/tối, lựa chọn Sáng / Tối / Theo thiết bị trong Cài đặt, lưu theo thiết bị bằng cookie và hiển thị đúng ngay từ server
+- [x] 19. Tài liệu luồng hoạt động cho mọi chức năng (docs/*-flow.md, mục lục trong README), cập nhật README
+- [x] 20. Cập nhật PRD, ARCHITECTURE, STRUCTURE theo hiện trạng (đã làm / một phần / chưa làm, schema thật, cấu trúc thật)
+- [x] 21. Rút gọn README: chuyển bảng API sang docs/api.md, danh sách bộ kiểm thử sang docs/testing.md, README chỉ giữ tóm tắt và liên kết
+- [x] 22. Tài liệu tổng hợp phương pháp, thuật toán, quy trình xử lý theo từng chức năng (docs/algorithms.md), liên kết trong README
+- [x] 23. Chịu được lúc backend khởi động lại: frontend thử lại khi kết nối bị từ chối, và proxy không xóa phiên khi không hỏi được backend
+- [x] 24. Làm lại bố cục hộp xác nhận: biểu tượng theo mức độ, tiêu đề ngắn + mô tả + ô tên đối tượng, thẻ giữa màn hình (máy tính) / tấm trượt từ mép dưới (điện thoại), hiển thị tốt ở giao diện tối
