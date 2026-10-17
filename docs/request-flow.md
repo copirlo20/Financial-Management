@@ -90,7 +90,7 @@ Câu **tiếng Việt là khóa dịch** ([shared/src/i18n/](../shared/src/i18n/
 | `404` | Không có bản ghi, không phải của bạn, admin route gọi bởi người thường | Trang "Không tìm thấy" |
 | `429` | Quá giới hạn (chat) | Thông báo trong khung chat |
 | `5xx` | Lỗi không lường trước (chi tiết chỉ ở log backend) | Trang "Đã xảy ra lỗi" kèm nút Thử lại |
-| Không kết nối được backend | Backend đang khởi động lại (nạp lại khi sửa mã, triển khai) hoặc đã dừng | Frontend **chờ và thử lại** khoảng 5 giây (chỉ với lỗi "connection refused", tức yêu cầu chưa tới backend nên thử lại an toàn, kể cả khi ghi); vẫn không được thì trang "Đã xảy ra lỗi". Người dùng **không bị đăng xuất** |
+| Không kết nối được backend | Backend đang khởi động lại (nạp lại khi sửa mã, triển khai) hoặc đã dừng | Frontend **chờ và thử lại** khoảng 5 giây (chỉ với lỗi "connection refused", tức yêu cầu chưa tới backend nên thử lại an toàn, kể cả khi ghi); vẫn không được thì trang "Đã xảy ra lỗi" và log ghi `Backend not reachable at …`. Khi chạy `npm run dev`, backend crash lúc đang phục vụ được [scripts/dev.mjs](../scripts/dev.mjs) **tự chạy lại** (tối đa 3 lần/phút; `node --watch` tự nó chỉ chờ file đổi). Người dùng **không bị đăng xuất** |
 
 ## Khi người dùng bấm Quay lại hoặc điều hướng
 

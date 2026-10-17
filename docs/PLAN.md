@@ -21,5 +21,5 @@
 - [x] 20. Cập nhật PRD, ARCHITECTURE, STRUCTURE theo hiện trạng (đã làm / một phần / chưa làm, schema thật, cấu trúc thật)
 - [x] 21. Rút gọn README: chuyển bảng API sang docs/api.md, danh sách bộ kiểm thử sang docs/testing.md, README chỉ giữ tóm tắt và liên kết
 - [x] 22. Tài liệu tổng hợp phương pháp, thuật toán, quy trình xử lý theo từng chức năng (docs/algorithms.md), liên kết trong README
-- [x] 23. Chịu được lúc backend khởi động lại: frontend thử lại khi kết nối bị từ chối, và proxy không xóa phiên khi không hỏi được backend
+- [x] 23. Chịu được lúc backend khởi động lại: frontend thử lại khi kết nối bị từ chối, proxy không xóa phiên khi không hỏi được backend, và `npm run dev` tự chạy lại backend khi nó crash
 - [x] 24. Làm lại bố cục hộp xác nhận: biểu tượng theo mức độ, tiêu đề ngắn + mô tả + ô tên đối tượng, thẻ giữa màn hình (máy tính) / tấm trượt từ mép dưới (điện thoại), hiển thị tốt ở giao diện tối
