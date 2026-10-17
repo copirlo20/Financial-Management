@@ -269,25 +269,7 @@ Xác thực bằng `Authorization: Bearer <accessToken>`, ngôn ngữ bằng hea
 
 ## ⚙️ Cấu hình
 
-Tất cả cấu hình nằm trong **một file `.env` ở thư mục gốc** (không bao giờ commit). Tạo file này trước khi chạy:
-
-```ini
-# Kết nối PostgreSQL (mã hóa URL nếu mật khẩu có ký tự đặc biệt)
-DATABASE_URL="postgresql://postgres:MAT_KHAU@localhost:5432/financial_management"
-
-# Khóa ký JWT, tối thiểu 32 ký tự ngẫu nhiên
-AUTH_SECRET="thay-bang-chuoi-ngau-nhien-dai-it-nhat-32-ky-tu"
-
-# (Tùy chọn) Bật trợ lý đọc sao kê, đọc PDF và chatbot. Chỉ cần MỘT trong hai nhà cung cấp.
-# Claude: khóa bí mật dạng sk-ant-..., không phải ID của khóa
-# ANTHROPIC_API_KEY="sk-ant-..."
-# ANTHROPIC_MODEL="claude-opus-5-5"
-# OpenAI (GPT): khóa bí mật dạng sk-...
-# OPENAI_API_KEY="sk-..."
-# OPENAI_MODEL="gpt-6.1-sol"
-# Có cả hai khóa thì chọn một (mặc định: anthropic)
-# AI_PROVIDER="openai"
-```
+Tất cả cấu hình nằm trong **một file `.env` ở thư mục gốc** , tạo file này trước khi chạy (tham khảo `.env.example`):
 
 | Biến                                    | Bắt buộc | Mặc định                | Mô tả                                                                                                                                                          |
 | --------------------------------------- | :------: | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -378,17 +360,17 @@ Chạy ở **thư mục gốc**.
 
 ### 🛠️ Gặp lỗi?
 
-| Triệu chứng                                               | Nguyên nhân thường gặp                                                                                          | Cách xử lý                                                                           |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `Cannot find module '…/generated/client'`                 | Chưa sinh client Prisma                                                                                         | `npm run db:generate`                                                                |
-| `DATABASE_URL is not set` / không kết nối được            | Thiếu `.env` hoặc sai thông tin                                                                                 | Kiểm tra `.env`, PostgreSQL đã chạy chưa, database đã tạo chưa                       |
-| `AUTH_SECRET must be set and at least 32 characters long` | Thiếu hoặc quá ngắn                                                                                             | Thêm `AUTH_SECRET` ≥ 32 ký tự                                                        |
-| `EADDRINUSE`                                              | Cổng 3000 / 4000 đang bị chiếm                                                                                  | Đặt `PORT` / `BACKEND_PORT` khác, hoặc tắt tiến trình đang chiếm cổng                |
-| Không thấy nút chatbot                                    | Backend chưa có khóa AI, hoặc `AI_PROVIDER` chọn nhà cung cấp chưa có khóa (backend ghi cảnh báo khi khởi động) | Thêm `ANTHROPIC_API_KEY` hoặc `OPENAI_API_KEY` vào `.env` rồi chạy lại `npm run dev` |
-| `invalid x-api-key` (401 từ Anthropic)                    | Đang dùng **ID** của khóa (`apikey_…`) thay vì khóa bí mật                                                      | Dùng khóa bí mật `sk-ant-…` (chỉ hiện một lần lúc tạo)                               |
-| "Tài khoản của trợ lý AI đã hết tín dụng"                 | Tài khoản API chưa nạp tiền hoặc đã hết (OpenAI báo `insufficient_quota`)                                       | Nạp tiền ở trang billing của nhà cung cấp                                            |
-| Cảnh báo `Blocked cross-origin request … /_next/hmr`      | Mở app từ địa chỉ không phải `localhost`                                                                        | Thêm địa chỉ đó vào `allowedDevOrigins` trong `frontend/next.config.ts`              |
-| Trang báo lỗi ngay sau khi sửa backend | Backend đang khởi động lại (`npm run dev` nạp lại khi bạn sửa mã backend) hoặc đã dừng | Frontend tự chờ tới ~5 giây để backend trở lại; nếu vẫn lỗi thì xem log `[backend]`, sửa lỗi rồi bấm Thử lại. Phiên đăng nhập không bị mất |
+| Triệu chứng                                               | Nguyên nhân thường gặp                                                                                          | Cách xử lý                                                                                                                                 |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Cannot find module '…/generated/client'`                 | Chưa sinh client Prisma                                                                                         | `npm run db:generate`                                                                                                                      |
+| `DATABASE_URL is not set` / không kết nối được            | Thiếu `.env` hoặc sai thông tin                                                                                 | Kiểm tra `.env`, PostgreSQL đã chạy chưa, database đã tạo chưa                                                                             |
+| `AUTH_SECRET must be set and at least 32 characters long` | Thiếu hoặc quá ngắn                                                                                             | Thêm `AUTH_SECRET` ≥ 32 ký tự                                                                                                              |
+| `EADDRINUSE`                                              | Cổng 3000 / 4000 đang bị chiếm                                                                                  | Đặt `PORT` / `BACKEND_PORT` khác, hoặc tắt tiến trình đang chiếm cổng                                                                      |
+| Không thấy nút chatbot                                    | Backend chưa có khóa AI, hoặc `AI_PROVIDER` chọn nhà cung cấp chưa có khóa (backend ghi cảnh báo khi khởi động) | Thêm `ANTHROPIC_API_KEY` hoặc `OPENAI_API_KEY` vào `.env` rồi chạy lại `npm run dev`                                                       |
+| `invalid x-api-key` (401 từ Anthropic)                    | Đang dùng **ID** của khóa (`apikey_…`) thay vì khóa bí mật                                                      | Dùng khóa bí mật `sk-ant-…` (chỉ hiện một lần lúc tạo)                                                                                     |
+| "Tài khoản của trợ lý AI đã hết tín dụng"                 | Tài khoản API chưa nạp tiền hoặc đã hết (OpenAI báo `insufficient_quota`)                                       | Nạp tiền ở trang billing của nhà cung cấp                                                                                                  |
+| Cảnh báo `Blocked cross-origin request … /_next/hmr`      | Mở app từ địa chỉ không phải `localhost`                                                                        | Thêm địa chỉ đó vào `allowedDevOrigins` trong `frontend/next.config.ts`                                                                    |
+| Trang báo lỗi ngay sau khi sửa backend                    | Backend đang khởi động lại (`npm run dev` nạp lại khi bạn sửa mã backend) hoặc đã dừng                          | Frontend tự chờ tới ~5 giây để backend trở lại; nếu vẫn lỗi thì xem log `[backend]`, sửa lỗi rồi bấm Thử lại. Phiên đăng nhập không bị mất |
 
 ## 🧪 Kiểm thử
 
@@ -424,7 +406,7 @@ Chi tiết nằm trong thư mục [docs/](docs/). **Đọc [request-flow](docs/r
 | Bạn cần                                                                                             | Đọc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Hiểu một chức năng hoạt động thế nào** (file nào làm gì, luồng từng bước, quy tắc, lỗi, kiểm thử) | Nền tảng: [request](docs/request-flow.md) · [auth](docs/auth-flow.md) · [security](docs/security-flow.md) · [ui](docs/ui-flow.md)<br />Dữ liệu tài chính: [account](docs/account-flow.md) · [category](docs/category-flow.md) · [transaction](docs/transaction-flow.md) · [budget](docs/budget-flow.md) · [savings](docs/savings-flow.md) · [currency](docs/currency-flow.md)<br />Nhập và báo cáo: [import](docs/import-flow.md) · [dashboard](docs/dashboard-flow.md) · [statement](docs/statement-flow.md) · [chat](docs/chat-flow.md)<br />Khác: [settings](docs/settings-flow.md) · [admin](docs/admin-flow.md) |
-| **Tra cứu**                                                                                         | [Thuật toán và quy trình xử lý](docs/algorithms.md) · [API](docs/api.md) · [Kiểm thử](docs/testing.md) · [Cấu trúc thư mục](docs/STRUCTURE.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Tra cứu**                                                                                         | [Thuật toán và quy trình xử lý](docs/algorithms.md) · [API](docs/api.md) · [Kiểm thử](docs/testing.md) · [Cấu trúc thư mục](docs/STRUCTURE.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **Thiết kế và kế hoạch**                                                                            | [PRD](docs/PRD.md) (mục tiêu, tính năng đã làm / chưa làm) · [ARCHITECTURE](docs/ARCHITECTURE.md) (kiến trúc, schema, phân quyền) · [PLAN](docs/PLAN.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## 🗺️ Lộ trình
@@ -478,8 +460,4 @@ Quy ước chính: Server Component là mặc định (chỉ thêm `"use client"
     </td>
   </tr>
 </table>
-
-[![Issues](https://img.shields.io/badge/Báo%20lỗi-Issues-ef4444?style=for-the-badge&logo=github&logoColor=white)](https://github.com/copirlo20/financial-management/issues)
-[![Discussions](https://img.shields.io/badge/Thảo%20luận-Discussions-0ea5e9?style=for-the-badge&logo=github&logoColor=white)](https://github.com/copirlo20/financial-management/discussions)
-
 </div>
