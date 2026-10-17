@@ -12,6 +12,7 @@
 // restarted at once (a few times a minute at most), a crash while starting (an error in the code) waits for
 // the fix to be saved, as node --watch does.
 import { spawn, spawnSync } from "node:child_process";
+import { networkInterfaces } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -71,7 +72,24 @@ function start(server) {
   });
 }
 
+// The addresses another device on the same network can open. Next.js prints just one "Network" address,
+// often a virtual adapter's (VMware, Hyper-V, WSL) that no phone can reach, so the real ones are listed.
+const VIRTUAL_ADAPTER = /vmware|virtualbox|vethernet|hyper-v|wsl|docker|loopback|tailscale|zerotier/i;
+function printNetworkAddresses() {
+  const addresses = Object.entries(networkInterfaces())
+    .filter(([name]) => !VIRTUAL_ADAPTER.test(name))
+    .flatMap(([, list]) => list ?? [])
+    .filter((address) => address.family === "IPv4" && !address.internal && !address.address.startsWith("169.254."))
+    .map((address) => `http://${address.address}:${frontendPort}`);
+  if (addresses.length === 0) return;
+  console.log(`[dev] From another device on the same network: ${addresses.join("  ")}`);
+}
+
 function watchLine(server, line) {
+  if (server.name === "frontend" && !server.announced && /Ready in/.test(line)) {
+    server.announced = true;
+    printNetworkAddresses();
+  }
   if (server.ready?.test(line)) server.serving = true;
   if (!server.superviseWatch) return;
   // node --watch prints these two itself.

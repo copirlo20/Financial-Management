@@ -1,9 +1,18 @@
+import { networkInterfaces } from "node:os";
 import type { NextConfig } from "next";
 
+// This machine's own IPv4 addresses (Wi-Fi, Ethernet, WSL/Hyper-V and other virtual adapters). Read at
+// start-up rather than written down, as the router may hand out a different one tomorrow.
+const ownAddresses = Object.values(networkInterfaces())
+  .flat()
+  .filter((address) => address?.family === "IPv4" && !address.internal)
+  .map((address) => address!.address);
+
 const nextConfig: NextConfig = {
-  // Development only: hosts other than localhost that may load the dev server's /_next resources
-  // (HMR). 172.29.112.1 is the Windows host's virtual adapter address seen from WSL/Hyper-V.
-  allowedDevOrigins: ["172.29.112.1", "192.168.0.240"],
+  // Development only: hosts other than localhost that may load the dev server's /_next resources (the
+  // page's scripts and hot reload). Without them a page opened from a phone at http://<this machine's
+  // IP>:3000 shows up but never becomes interactive.
+  allowedDevOrigins: ownAddresses,
   // Code shared with the backend (formatting, translations, labels) is plain TypeScript source.
   transpilePackages: ["@fm/shared"],
   // No "X-Powered-By: Next.js": there is no reason to tell visitors what the server runs.

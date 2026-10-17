@@ -18,7 +18,7 @@
 ![Claude](https://img.shields.io/badge/Claude-AI-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-![Tests](https://img.shields.io/badge/tests-685%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-690%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
 ![Languages](https://img.shields.io/badge/giao%20di%E1%BB%87n-Ti%E1%BA%BFng%20Vi%E1%BB%87t%20%7C%20English-7c3aed?style=flat-square)
 ![Currencies](https://img.shields.io/badge/ti%E1%BB%81n%20t%E1%BB%87-10%20lo%E1%BA%A1i-f59e0b?style=flat-square)
 ![Responsive](https://img.shields.io/badge/responsive-desktop%20%7C%20mobile-ec4899?style=flat-square)
@@ -200,7 +200,7 @@ Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu c
       <img src="https://img.shields.io/badge/Edge%20%2F%20Chrome-CDP-0078D7?logo=microsoftedge&logoColor=white" alt="CDP" />
       <img src="https://img.shields.io/badge/ESLint_9-4B32C3?logo=eslint&logoColor=white" alt="ESLint" />
     </td>
-    <td>685 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
+    <td>690 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
   </tr>
 </table>
 
@@ -333,6 +333,8 @@ npm run dev
 
 Mở http://localhost:3000, **Đăng ký** một tài khoản rồi bắt đầu. Muốn thử trang quản trị, đặt `role = 'ADMIN'` cho tài khoản đó trong bảng `users`.
 
+📱 **Mở từ điện thoại hoặc máy khác cùng mạng Wi-Fi:** dùng địa chỉ ở dòng `[dev] From another device on the same network: http://<IP>:3000` mà `npm run dev` in ra. Đừng dùng dòng `Network:` của Next.js, vì đó thường là card mạng ảo (VMware, Hyper-V) mà thiết bị khác không vào được. Lần đầu Windows hỏi tường lửa cho Node.js thì chọn **Cho phép**.
+
 ### 4️⃣ Chạy bản production
 
 ```bash
@@ -369,12 +371,13 @@ Chạy ở **thư mục gốc**.
 | Không thấy nút chatbot                                    | Backend chưa có khóa AI, hoặc `AI_PROVIDER` chọn nhà cung cấp chưa có khóa (backend ghi cảnh báo khi khởi động) | Thêm `ANTHROPIC_API_KEY` hoặc `OPENAI_API_KEY` vào `.env` rồi chạy lại `npm run dev`                                                       |
 | `invalid x-api-key` (401 từ Anthropic)                    | Đang dùng **ID** của khóa (`apikey_…`) thay vì khóa bí mật                                                      | Dùng khóa bí mật `sk-ant-…` (chỉ hiện một lần lúc tạo)                                                                                     |
 | "Tài khoản của trợ lý AI đã hết tín dụng"                 | Tài khoản API chưa nạp tiền hoặc đã hết (OpenAI báo `insufficient_quota`)                                       | Nạp tiền ở trang billing của nhà cung cấp                                                                                                  |
-| Cảnh báo `Blocked cross-origin request … /_next/hmr`      | Mở app từ địa chỉ không phải `localhost`                                                                        | Thêm địa chỉ đó vào `allowedDevOrigins` trong `frontend/next.config.ts`                                                                    |
-| Trang báo lỗi, log có `ECONNREFUSED` / `ECONNRESET` / `Backend not reachable` | Backend đang khởi động lại (`npm run dev` nạp lại khi bạn sửa mã backend), bị crash, hoặc mã backend có lỗi | Frontend tự chờ tới ~5 giây; backend crash lúc đang chạy thì `npm run dev` tự chạy lại (tối đa 3 lần/phút). Nếu vẫn lỗi, xem các dòng `[backend]` / `[dev]` phía trên, sửa lỗi, lưu file rồi bấm Thử lại. Phiên đăng nhập không bị mất |
+| Mở từ thiết bị khác: không vào được, hoặc trang hiện ra nhưng bấm không có tác dụng | Dùng IP của card mạng ảo, tường lửa chặn Node.js, mạng Wi-Fi khách cách ly các thiết bị, hoặc mở bằng IP không thuộc máy chạy app (`allowedDevOrigins` tự lấy mọi IP của máy) | Dùng địa chỉ dòng `[dev] From another device…`; cho Node.js qua tường lửa; dùng cùng mạng Wi-Fi chính. Với `npm start` (production), cookie đăng nhập là `Secure` nên phải mở qua HTTPS mới đăng nhập được từ máy khác |
+| Log có `A tree hydrated but some attributes … __gcruniqueid` / `__gcrremoteframetoken` | Chrome trên iPhone tự gắn các thuộc tính này vào form và ô nhập (tính năng tự điền) trước khi React chạy. Vô hại | `frontend/instrumentation-client.ts` đã bỏ riêng cảnh báo này khi chạy `npm run dev`; nếu vừa thêm file, chạy lại `npm run dev` |
+| Trang báo lỗi, log có `ECONNREFUSED` / `ECONNRESET` / `Backend not reachable` | Backend đang khởi động lại (`npm run dev` nạp lại khi bạn sửa mã backend), bị crash, hoặc mã backend có lỗi | Frontend tự chờ tới ~5 giây (khi kết nối bị cắt giữa chừng thì chỉ thử lại yêu cầu đọc; với thao tác ghi, form báo "Mất kết nối tới máy chủ khi đang lưu…" để bạn kiểm tra rồi làm lại); backend crash lúc đang chạy thì `npm run dev` tự chạy lại (tối đa 3 lần/phút). Nếu vẫn lỗi, xem các dòng `[backend]` / `[dev]` phía trên, sửa lỗi, lưu file rồi bấm Thử lại. Phiên đăng nhập không bị mất |
 
 ## 🧪 Kiểm thử
 
-Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 685 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
+Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 690 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
 
 ```bash
 npm test                          # toàn bộ: build, chạy, tắt

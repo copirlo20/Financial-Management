@@ -49,7 +49,8 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `app/api/chat/`, `app/(app)/imports/template/`, `app/(app)/transactions/statement/` | Route chuyển tiếp: luồng chat, tải file mẫu, tải sao kê PDF |
 | `app/layout.tsx`, `globals.css`, `global-error.tsx` | Layout gốc (ngôn ngữ, giao diện sáng/tối), biến màu và biến thể `dark`, trang lỗi cuối cùng |
 | `proxy.ts` | Chạy trước mọi yêu cầu: làm mới access token hết hạn, đẩy khách chưa đăng nhập về `/login`, đặt `Content-Security-Policy` (nonce) và HSTS |
-| `next.config.ts` | Header bảo mật cố định, giới hạn tải lên của Server Action, `allowedDevOrigins` |
+| `next.config.ts` | Header bảo mật cố định, giới hạn tải lên của Server Action, `allowedDevOrigins` (tự lấy mọi IPv4 của máy) |
+| `instrumentation-client.ts` | Chạy trong trình duyệt trước khi trang hydrate. Lúc phát triển, bỏ cảnh báo hydration chỉ do Chrome trên iPhone gắn thuộc tính `__gcr…` cho tính năng tự điền; mọi khác biệt khác vẫn được báo |
 | `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client; `wire.ts` khôi phục số thập phân và ngày |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
