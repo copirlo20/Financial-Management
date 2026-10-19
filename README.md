@@ -18,7 +18,7 @@
 ![Claude](https://img.shields.io/badge/Claude-AI-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-![Tests](https://img.shields.io/badge/tests-690%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-694%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
 ![Languages](https://img.shields.io/badge/giao%20di%E1%BB%87n-Ti%E1%BA%BFng%20Vi%E1%BB%87t%20%7C%20English-7c3aed?style=flat-square)
 ![Currencies](https://img.shields.io/badge/ti%E1%BB%81n%20t%E1%BB%87-10%20lo%E1%BA%A1i-f59e0b?style=flat-square)
 ![Responsive](https://img.shields.io/badge/responsive-desktop%20%7C%20mobile-ec4899?style=flat-square)
@@ -200,7 +200,7 @@ Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu c
       <img src="https://img.shields.io/badge/Edge%20%2F%20Chrome-CDP-0078D7?logo=microsoftedge&logoColor=white" alt="CDP" />
       <img src="https://img.shields.io/badge/ESLint_9-4B32C3?logo=eslint&logoColor=white" alt="ESLint" />
     </td>
-    <td>690 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
+    <td>694 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
   </tr>
 </table>
 
@@ -377,7 +377,7 @@ Chạy ở **thư mục gốc**.
 
 ## 🧪 Kiểm thử
 
-Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 690 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
+Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 694 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
 
 ```bash
 npm test                          # toàn bộ: build, chạy, tắt

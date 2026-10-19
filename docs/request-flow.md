@@ -75,7 +75,7 @@ Mọi view và handler **cần đăng nhập** bắt đầu bằng `requireUser(
 ## Quy ước dữ liệu qua đường truyền
 
 - **Số tiền** là `Decimal` đầu-cuối: trong form là chuỗi, trong JSON là `{"$decimal": "1250000.50"}`, frontend khôi phục bằng `decimal.js`. Không bao giờ qua số thực.
-- **Ngày** trong JSON là `{"$date": "…"}`; cột `DATE` lưu ở 00:00 UTC; ngày trong form là `YYYY-MM-DD`, tháng là `YYYY-MM`.
+- **Ngày** trong JSON là `{"$date": "…"}`; cột `DATE` lưu ở 00:00 UTC; ngày trong form là `dd/mm/yyyy` như hiển thị (backend nhận cả `YYYY-MM-DD` và chuyển về dạng này trước khi kiểm), tháng là `YYYY-MM`.
 - **Id** là UUID. Id sai và id của người khác cho cùng một kết quả (đọc → `404`, ghi → "Không tìm thấy …") để không lộ id có tồn tại hay không.
 
 ## Đa ngôn ngữ

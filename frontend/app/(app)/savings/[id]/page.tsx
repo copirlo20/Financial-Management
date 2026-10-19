@@ -81,7 +81,7 @@ export default async function SavingsGoalPage({ params }: PageProps<"/savings/[i
                     <div className="min-w-0 flex-1 basis-40">
                       <p className="font-medium">{deposit ? t("Nạp thêm") : t("Rút ra")}</p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {formatDate(contribution.date, locale)}
+                        {formatDate(contribution.date)}
                         {contribution.note ? ` · ${contribution.note}` : ""}
                       </p>
                     </div>

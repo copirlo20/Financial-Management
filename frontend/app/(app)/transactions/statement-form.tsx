@@ -2,11 +2,12 @@
 
 import { FileDown } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { parseDateText } from "@fm/shared/dates";
 import { STATEMENT_ERRORS, STATEMENT_MAX_DAYS, statementDays, type StatementError } from "@fm/shared/reports";
+import { DateInput } from "@/components/date-input";
 import { useI18n } from "@/components/i18n-provider";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Props = {
@@ -26,8 +27,9 @@ export function StatementForm({ accounts, defaultCurrency, defaults, error }: Pr
 
   const check = (event: FormEvent<HTMLFormElement>) => {
     const data = new FormData(event.currentTarget);
-    const from = String(data.get("from") ?? "");
-    const to = String(data.get("to") ?? "");
+    // Typed as dd/mm/yyyy; compared and counted as "YYYY-MM-DD".
+    const from = parseDateText(String(data.get("from") ?? ""));
+    const to = parseDateText(String(data.get("to") ?? ""));
     const issue: StatementError | null =
       !from || !to || from > to ? "invalid" : statementDays(from, to) > STATEMENT_MAX_DAYS ? "range" : null;
     setProblem(issue);
@@ -35,20 +37,21 @@ export function StatementForm({ accounts, defaultCurrency, defaults, error }: Pr
   };
 
   return (
-    <form action="/transactions/statement" method="get" data-download onSubmit={check} className="grid gap-4">
+    <form action="/transactions/statement" method="get" data-download onSubmit={check} className="@container grid gap-4">
       {problem && (
         <p role="alert" className="text-sm text-destructive">
           {t(STATEMENT_ERRORS[problem])}
         </p>
       )}
-      <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+      {/* Side by side only where both dates fit (each needs about 9rem); stacked in a narrow card or on a phone. */}
+      <div className="grid gap-3 @xs:grid-cols-2 *:min-w-0">
         <div className="grid gap-1.5">
           <Label htmlFor="st-from">{t("Từ ngày")}</Label>
-          <Input id="st-from" name="from" type="date" required defaultValue={defaults.from} />
+          <DateInput id="st-from" name="from" required defaultValue={defaults.from} />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="st-to">{t("Đến ngày")}</Label>
-          <Input id="st-to" name="to" type="date" required defaultValue={defaults.to} />
+          <DateInput id="st-to" name="to" required defaultValue={defaults.to} />
         </div>
       </div>
       <div className="grid gap-1.5">

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateText } from "./common";
 
 // String end to end so money never passes through a float; always positive, direction comes from the type.
 export const amountField = (requiredMessage: string) =>
@@ -16,6 +17,7 @@ export const amountField = (requiredMessage: string) =>
 
 export const dateField = z
   .string({ error: "Vui lòng chọn ngày." })
+  .pipe(dateText)
   .pipe(z.iso.date({ error: "Ngày không hợp lệ." }))
   .refine((value) => value >= "2000-01-01" && value <= "2100-12-31", { error: "Ngày nằm ngoài khoảng cho phép." });
 
@@ -58,7 +60,7 @@ export const transactionFilterSchema = z.object({
   accountId: optional(z.uuid()),
   categoryId: optional(z.uuid()),
   type: optional(z.enum(["EXPENSE", "INCOME", "TRANSFER"])),
-  from: optional(z.iso.date()),
-  to: optional(z.iso.date()),
+  from: optional(dateText.pipe(z.iso.date())),
+  to: optional(dateText.pipe(z.iso.date())),
   page: z.coerce.number().int().min(1).max(100000).catch(1),
 });

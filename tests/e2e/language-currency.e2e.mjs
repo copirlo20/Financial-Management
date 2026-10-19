@@ -107,6 +107,19 @@ try {
 
   body = clean(await page("/accounts", jarA));
   check("money and labels use English formatting", body.includes("Bank account · VND") && /₫\s?13,175,000/.test(body) && body.includes("Total converted to VND"), body.match(/₫[\d,]+/g)?.slice(0, 4).join(" "));
+  // Dates read dd/mm/yyyy whatever the language, and the fields take them as typed.
+  const todayText = TODAY.split("-").reverse().join("/");
+  html = await page("/transactions", jarA);
+  const dateField = html.match(/<input[^>]*id="tx-date"[^>]*>/)?.[0] ?? "";
+  check("in English too, dates read dd/mm/yyyy in lists and in date fields",
+    clean(html).includes(`${todayText} · `) && dateField.includes(`value="${todayText}"`) && dateField.includes('placeholder="dd/mm/yyyy"'), dateField);
+  const tomorrow = new Date(`${TODAY}T00:00:00Z`);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const tomorrowText = tomorrow.toISOString().slice(0, 10).split("-").reverse().join("/");
+  const filtered = clean(await page(`/transactions?from=${encodeURIComponent(todayText)}&to=${encodeURIComponent(todayText)}`, jarA));
+  const later = clean(await page(`/transactions?from=${encodeURIComponent(tomorrowText)}`, jarA));
+  check("a filter typed as dd/mm/yyyy is understood", filtered.includes("Lunch") && !later.includes("Lunch"));
+
   body = clean(await page("/categories", jarA));
   check("system category names are translated, custom ones are left alone", body.includes("Food & drink") && body.includes("Salary") && body.includes(">Coffee<") && body.includes("Default"));
   body = clean(await page("/dashboard", jarA));

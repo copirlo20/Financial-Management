@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { TRANSACTION_TYPE_LABELS } from "@fm/shared/labels";
 import type { TransactionFormState } from "@/app/actions/transactions";
+import { DateInput } from "@/components/date-input";
 import { FieldError } from "@/components/field-error";
 import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
@@ -120,10 +121,9 @@ export function TransactionForm({ action, mode, accounts, categories, defaults }
 
       <div className="grid gap-2">
         <Label htmlFor="tx-date">{t("Ngày")}</Label>
-        <Input
+        <DateInput
           id="tx-date"
           name="date"
-          type="date"
           required
           defaultValue={values.date}
           aria-invalid={Boolean(state?.errors?.date)}

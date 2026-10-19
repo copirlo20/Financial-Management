@@ -50,7 +50,7 @@ export default async function AdminExchangeRatesPage() {
                   <tr key={row.id} className="border-t">
                     <th scope="row" className="py-1.5 text-left font-normal">{row.quoteCurrency}</th>
                     <td className="py-1.5 text-right tabular-nums">{number.format(row.rate.toNumber())}</td>
-                    <td className="py-1.5 text-right tabular-nums">{formatDate(row.date, locale)}</td>
+                    <td className="py-1.5 text-right tabular-nums">{formatDate(row.date)}</td>
                     <td className="py-1.5 text-right">{row.isManual ? t("Nhập tay") : t("Tự động")}</td>
                   </tr>
                 ))}
@@ -70,7 +70,7 @@ export default async function AdminExchangeRatesPage() {
                 {manual.map((row) => (
                   <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card shadow-xs p-3">
                     <p className="tabular-nums">
-                      {t("{0} · 1 {1} = {2} {3}", formatDate(row.date, locale), RATE_BASE, number.format(row.rate.toNumber()), row.quoteCurrency)}
+                      {t("{0} · 1 {1} = {2} {3}", formatDate(row.date), RATE_BASE, number.format(row.rate.toNumber()), row.quoteCurrency)}
                     </p>
                     <form action={deleteManualRate}>
                       <input type="hidden" name="id" value={row.id} />

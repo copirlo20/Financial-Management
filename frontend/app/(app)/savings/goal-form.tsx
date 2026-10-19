@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import type { GoalFormState } from "@/app/actions/savings";
 import { CurrencyOptions } from "@/components/currency-options";
+import { DateInput } from "@/components/date-input";
 import { FieldError } from "@/components/field-error";
 import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
@@ -84,10 +85,9 @@ export function GoalForm({ action, mode, defaults, cancelHref }: Props) {
 
       <div className="grid gap-2">
         <Label htmlFor="goal-deadline">{t("Hạn chót (không bắt buộc)")}</Label>
-        <Input
+        <DateInput
           id="goal-deadline"
           name="deadline"
-          type="date"
           defaultValue={values.deadline}
           aria-invalid={Boolean(state?.errors?.deadline)}
           aria-describedby="goal-deadline-error"

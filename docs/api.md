@@ -12,7 +12,7 @@ Backend nghe ở `http://127.0.0.1:4000`, mọi route nằm dưới tiền tố 
 | 🌍 Ngôn ngữ  | Header `x-locale: vi` hoặc `en` (mặc định `vi`)                                         |
 | 📦 Định dạng | JSON. Riêng tải file là `application/octet-stream`, chat trả luồng NDJSON               |
 | 💰 Số tiền   | Chuỗi thập phân, response gắn nhãn `{"$decimal": "1250000.50"}`                         |
-| 📅 Ngày      | Response `{"$date": "…"}`; request `YYYY-MM-DD` (ngày) hoặc `YYYY-MM` (tháng)           |
+| 📅 Ngày      | Response `{"$date": "…"}`; request `YYYY-MM-DD` hoặc `dd/mm/yyyy` (ngày) hoặc `YYYY-MM` (tháng)           |
 | 🆔 Id        | UUID. Id sai hoặc của người khác đều cho kết quả như nhau: đọc → `404`, ghi → `message` |
 | 📏 Giới hạn  | JSON ≤ 1 MB · file tải lên ≤ 5 MB và ≤ 10.000 dòng                                      |
 
@@ -171,7 +171,7 @@ Lỗi nhập liệu và lỗi nghiệp vụ **vẫn là HTTP `200`**, nằm tron
 
 | Method | Endpoint                 | Quyền | Mô tả                                   | Tham số / Trả về                                                                        |
 | :----: | ------------------------ | :---: | --------------------------------------- | --------------------------------------------------------------------------------------- |
-| `GET`  | `/api/reports/statement` |  👤   | Tải sao kê PDF của một khoảng thời gian | Query `from`, `to` (`YYYY-MM-DD`), `accountId` (rỗng = tất cả) → file `application/pdf` |
+| `GET`  | `/api/reports/statement` |  👤   | Tải sao kê PDF của một khoảng thời gian | Query `from`, `to` (`YYYY-MM-DD` hoặc `dd/mm/yyyy`), `accountId` (rỗng = tất cả) → file `application/pdf` |
 
 - Một ví: số liệu theo tiền tệ của ví. Tất cả: quy về tiền tệ mặc định; giao dịch chưa có tỷ giá được liệt kê nhưng không cộng vào tổng.
 - Từ chối (`message` là mã lỗi): `invalid` ngày sai hoặc `from` > `to` · `range` quá 3 năm · `account` ví không có (`404`) · `rows` quá 3.000 giao dịch · `busy` quá 30 lần/giờ (`429`).

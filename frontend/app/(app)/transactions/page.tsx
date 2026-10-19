@@ -9,10 +9,10 @@ import { formatDate, todayIsoDate } from "@fm/shared/dates";
 import { createTransaction, deleteTransaction } from "@/app/actions/transactions";
 import { CategoryBadge } from "@/components/category-icon";
 import { ConfirmButton } from "@/components/confirm-button";
+import { DateInput } from "@/components/date-input";
 import { NativeSelect } from "@/components/native-select";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiLoad } from "@/lib/api/client";
 import { requireUser } from "@/lib/auth/dal";
@@ -101,11 +101,11 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="f-from">{t("Từ ngày")}</Label>
-              <Input id="f-from" name="from" type="date" defaultValue={filter.from ?? ""} />
+              <DateInput id="f-from" name="from" defaultValue={filter.from ?? ""} />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="f-to">{t("Đến ngày")}</Label>
-              <Input id="f-to" name="to" type="date" defaultValue={filter.to ?? ""} />
+              <DateInput id="f-to" name="to" defaultValue={filter.to ?? ""} />
             </div>
             <div className="flex items-end gap-2">
               <Button type="submit" variant="outline">{t("Lọc")}</Button>
@@ -142,7 +142,7 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
                     <div className="min-w-0 flex-1 basis-40">
                       <p className="truncate font-medium">{title}</p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {formatDate(row.date, locale)} · {row.account.name}
+                        {formatDate(row.date)} · {row.account.name}
                         {row.note ? ` · ${row.note}` : ""}
                       </p>
                     </div>

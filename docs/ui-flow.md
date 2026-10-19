@@ -93,6 +93,15 @@ Mọi form theo cùng một mẫu: [`useActionState`](https://react.dev/referenc
 - Cột và lưới hai cột dùng `content-start`, nên ô thấp hơn không bị đẩy xuống khi ô cạnh có gợi ý dài hoặc báo lỗi.
 - Form cập nhật **tại chỗ** (không tải lại trang): danh sách cập nhật vì frontend xóa cache sau mỗi lệnh ghi.
 
+## Ngày tháng
+
+- **Mọi ngày hiển thị dạng `dd/mm/yyyy`**, ở cả tiếng Việt lẫn tiếng Anh: danh sách, bảng, sao kê PDF, ô nhập. `formatDate` (ngày lịch, đọc theo UTC vì cột `DATE` lưu 00:00 UTC), `formatDay` (ngày của một thời điểm, theo giờ Việt Nam) và `formatDateTime` (`dd/mm/yyyy HH:mm`) ở [shared/src/dates.ts](../shared/src/dates.ts). Nhãn tháng giữ dạng "Tháng 10/2026".
+- **Ô nhập ngày** là [`DateInput`](../frontend/components/date-input.tsx), không dùng `type="date"` của trình duyệt (vốn hiện theo ngôn ngữ của máy và trên iPhone tự co giãn, lệch chiều cao):
+  - Ô chữ `dd/mm/yyyy`, bàn phím số trên điện thoại (`inputMode="numeric"`), **tự chèn dấu `/`** khi gõ ("05012026" → "05/01/2026", "5/" → "05/"); dán `2026-01-05` cũng được. Xóa thì để nguyên những gì người dùng gõ.
+  - Nút lịch bên phải là một `type="date"` trong suốt phủ lên biểu tượng: chạm là mở **bộ chọn ngày của điện thoại**; trên máy tính gọi `showPicker()`. Ô này cỡ chữ 16px để iOS không phóng to trang.
+  - Ô chữ chính là trường của form (gửi đúng như hiển thị), nên form chạy cả khi không có JavaScript. Backend nhận cả `dd/mm/yyyy` lẫn `YYYY-MM-DD` (`dateText` trong `validations/common.ts`, dùng `parseDateText`) rồi kiểm như cũ; ngày không có thật (31/02) bị từ chối.
+  - Hai ô "Từ ngày / Đến ngày" của sao kê chỉ đứng cạnh nhau khi form đủ rộng (container query `@xs`), hẹp hơn thì xếp chồng, để ngày luôn hiện đủ.
+
 ## Trang lỗi và không tìm thấy
 
 | Trường hợp | Trang |
@@ -106,7 +115,7 @@ Mọi form theo cùng một mẫu: [`useActionState`](https://react.dev/referenc
 
 | Bộ | Nội dung |
 | --- | --- |
-| `ui` (47) | Trình duyệt thật: biểu đồ, modal xác nhận (Hủy, Esc, Xóa), lớp phủ chờ cả khi Quay lại, lọc không tải lại trang, tải sao kê, giao diện tối (kể cả ô chọn), trang lỗi, khung chat |
-| `mobile` (29) | Giả lập điện thoại: bố cục 320–740 px, chạm, bàn phím ảo, modal dạng tấm trượt ở mép dưới, nút rộng hết khung |
+| `ui` (48) | Trình duyệt thật: biểu đồ, modal xác nhận (Hủy, Esc, Xóa), lớp phủ chờ cả khi Quay lại, lọc không tải lại trang, tải sao kê, giao diện tối (kể cả ô chọn), trang lỗi, khung chat |
+| `mobile` (30) | Giả lập điện thoại: bố cục 320–740 px, chạm, bàn phím ảo, modal dạng tấm trượt ở mép dưới, nút rộng hết khung, ô ngày ở 320px |
 | `states` (19) | Trạng thái rỗng, lỗi, không tìm thấy |
-| `language-currency` (47) | Đổi ngôn ngữ, bản dịch |
+| `language-currency` (49) | Đổi ngôn ngữ, bản dịch, ngày luôn `dd/mm/yyyy` |

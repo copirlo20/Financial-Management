@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { ContributionFormState } from "@/app/actions/savings";
+import { DateInput } from "@/components/date-input";
 import { FieldError } from "@/components/field-error";
 import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
@@ -60,10 +61,9 @@ export function ContributionForm({ action, currency, today }: Props) {
 
       <div className="grid gap-2">
         <Label htmlFor="sc-date">{t("Ngày")}</Label>
-        <Input
+        <DateInput
           id="sc-date"
           name="date"
-          type="date"
           required
           defaultValue={values.date}
           aria-invalid={Boolean(state?.errors?.date)}

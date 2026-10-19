@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ImportsView } from "@fm/backend/views/imports";
-import { formatDate } from "@fm/shared/dates";
+import { formatDay } from "@fm/shared/dates";
 import { IMPORT_STATUS_LABELS } from "@fm/shared/labels";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ImportsPage() {
-  const { t, locale } = await getI18n();
+  const { t } = await getI18n();
   await requireUser();
 
   const { accounts, batches, aiProvider } = await apiLoad<ImportsView>("/imports");
@@ -37,7 +37,7 @@ export default async function ImportsPage() {
                   <div className="min-w-0 flex-1 basis-48">
                     <p className="truncate font-medium">{batch.fileName}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {formatDate(batch.createdAt, locale)} · {batch.account.name} · {t(IMPORT_STATUS_LABELS[batch.status])}
+                      {formatDay(batch.createdAt)} · {batch.account.name} · {t(IMPORT_STATUS_LABELS[batch.status])}
                       {batch.status === "PROCESSED" &&
                         t(" · {0} giao dịch, bỏ qua {1} trùng", batch.importedCount, batch.skippedCount)}
                     </p>

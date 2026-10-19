@@ -704,4 +704,6 @@ export const en: Record<string, string> = {
     "The connection to the server was lost while saving. The change may or may not have been saved: check before sending it again.",
   "Không kết nối được máy chủ nên chưa có gì thay đổi. Hãy thử lại sau giây lát.":
     "Could not reach the server, so nothing was changed. Try again in a moment.",
+  "dd/mm/yyyy": "dd/mm/yyyy",
+  "Chọn ngày trên lịch": "Pick the date on a calendar",
 };

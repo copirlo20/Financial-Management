@@ -49,7 +49,7 @@ export async function GoalProgress({ goal }: Props) {
         {goal.status === "ARCHIVED" && ` · ${t(GOAL_STATUS_LABELS.ARCHIVED)}`}
       </p>
       {goal.deadline && (
-        <p className="text-sm text-muted-foreground">{t("Hạn chót {0}", formatDate(goal.deadline, locale))}
+        <p className="text-sm text-muted-foreground">{t("Hạn chót {0}", formatDate(goal.deadline))}
           {deadlineNote && ` · ${deadlineNote}`}
         </p>
       )}

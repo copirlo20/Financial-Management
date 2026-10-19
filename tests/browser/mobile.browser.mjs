@@ -194,10 +194,32 @@ try {
   await browser.goto(BASE + "/transactions");
   await browser.type("#tx-amount", "75000");
   await browser.type("#tx-note", "Mua bằng điện thoại");
+  // The number pad has no "/": the date is typed as digits and the field adds the slashes.
+  await browser.type("#tx-date", "05012026");
+  const typedDate = await browser.evaluate(`document.querySelector("#tx-date").value`);
   await browser.tap("button", { text: "Thêm giao dịch" });
   await browser.waitFor(`document.body.innerText.includes("Đã thêm giao dịch.") && document.body.innerText.includes("Mua bằng điện thoại")`, { message: "new transaction to appear" });
-  const added = await one(`select amount::text a, type from transactions where "userId" = $1 and note = 'Mua bằng điện thoại'`, [userId]);
-  check("adding a transaction with the on-screen keyboard works end to end", added?.a === "75000.00" && added.type === "EXPENSE");
+  const added = await one(`select amount::text a, type, to_char(date, 'YYYY-MM-DD') d from transactions where "userId" = $1 and note = 'Mua bằng điện thoại'`, [userId]);
+  check("adding a transaction with the on-screen keyboard works end to end, the date typed as digits",
+    added?.a === "75000.00" && added.type === "EXPENSE" && typedDate === "05/01/2026" && added.d === "2026-01-05", `${typedDate} → ${added?.d}`);
+
+  // Date fields on the narrowest phone: as tall as the other fields, the whole date readable, and the
+  // calendar button (a native date input, so a tap opens the phone's picker) inside the field and big enough.
+  await browser.setViewport({ width: 320, height: 640 });
+  await browser.goto(BASE + "/transactions");
+  await browser.evaluate(`(() => { document.querySelectorAll("details").forEach((d) => (d.open = true)); return true; })()`);
+  const dateFields = await browser.evaluate(`[...document.querySelectorAll('input[inputmode="numeric"][placeholder]')].map((el) => {
+    const f = el.getBoundingClientRect(), p = el.parentElement.querySelector('input[type="date"]').getBoundingClientRect();
+    const other = document.querySelector('#tx-amount').getBoundingClientRect();
+    return { id: el.id, value: el.value, sameHeight: Math.abs(f.height - other.height) < 1, fits: el.scrollWidth <= el.clientWidth,
+             picker: p.left >= f.left - 1 && p.right <= f.right + 1 && p.top >= f.top - 1 && p.bottom <= f.bottom + 1 && p.width >= 24 && p.height >= 24 };
+  })`);
+  const badDates = dateFields.filter((f) => !f.sameHeight || !f.fits || !f.picker || (f.value && !/^\d{2}\/\d{2}\/\d{4}$/.test(f.value)));
+  check("at 320px every date field reads dd/mm/yyyy in full, matches the other fields and has its calendar button inside",
+    dateFields.length >= 5 && badDates.length === 0, JSON.stringify(badDates.length ? badDates : dateFields.map((f) => f.id)));
+  await shoot("mobile-date-fields-320");
+  await browser.setViewport({ width: 360, height: 740 });
+  await browser.goto(BASE + "/transactions");
 
   await browser.evaluate(`(() => { const row = [...document.querySelectorAll("li")].find((li) => li.innerText.includes("Mua bằng điện thoại")); row.dataset.target = "delete"; return true; })()`);
   await browser.tap('li[data-target="delete"] form button');

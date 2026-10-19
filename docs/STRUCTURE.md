@@ -54,7 +54,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
-| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`)… |
+| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`), ô nhập ngày `dd/mm/yyyy` (`date-input.tsx`)… |
 | `components/ui/` | Thành phần nền kiểu shadcn/ui: `button`, `card`, `input`, `label`, `alert-dialog`, `chart` |
 
 ## backend/
@@ -83,7 +83,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | File | Nội dung |
 | --- | --- |
 | `i18n/` | `config.ts` (ngôn ngữ), `translate.ts`, `en.ts` (bản dịch tiếng Anh; câu tiếng Việt là khóa) |
-| `currencies.ts`, `rates.ts`, `dates.ts`, `months.ts` | Danh sách tiền tệ và định dạng tiền; gốc tỷ giá; múi giờ và định dạng ngày; tháng |
+| `currencies.ts`, `rates.ts`, `dates.ts`, `months.ts` | Danh sách tiền tệ và định dạng tiền; gốc tỷ giá; múi giờ, hiển thị ngày `dd/mm/yyyy` và đọc ngày người dùng gõ; tháng |
 | `wire.ts`, `auth.ts`, `form-state.ts` | Kiểu dữ liệu đường truyền và header; tên cookie, thời hạn token; kiểu trạng thái form |
 | `labels.ts`, `category-icons.ts`, `ai.ts`, `imports.ts`, `reports.ts` | Nhãn trạng thái; 30 biểu tượng danh mục; nhà cung cấp AI; mã lỗi nhập sao kê; giới hạn và mã lỗi sao kê PDF |
 

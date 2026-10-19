@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { SettingsView } from "@fm/backend/views/overview";
+import { formatDateTime } from "@fm/shared/dates";
 import { RATE_PROVIDER } from "@fm/shared/rates";
 import { logoutEverywhere } from "@/app/actions/auth";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -21,7 +22,6 @@ export default async function SettingsPage() {
   const { t, locale } = await getI18n();
   const user = await requireUser();
   const { status, rates } = await apiLoad<SettingsView>("/settings");
-  const dateTime = new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" });
 
   // Rates need more precision than money: 1 KRW is about 19.31 VND, which a currency format would round to 19.
   const rateFormat = (value: number) =>
@@ -58,7 +58,7 @@ export default async function SettingsPage() {
           <CardHeader>
             <CardTitle>{t("Tỷ giá")}</CardTitle>
             <CardDescription>
-              {status ? t("Cập nhật lúc {0}.", dateTime.format(status.fetchedAt)) : t("Chưa có tỷ giá nào được lưu.")}{" "}{t("Nguồn cập nhật mỗi ngày một lần.")}</CardDescription>
+              {status ? t("Cập nhật lúc {0}.", formatDateTime(status.fetchedAt)) : t("Chưa có tỷ giá nào được lưu.")}{" "}{t("Nguồn cập nhật mỗi ngày một lần.")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <table className="w-full text-sm">

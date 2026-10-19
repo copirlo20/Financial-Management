@@ -277,7 +277,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                         {isTransfer ? t("Chuyển khoản") : row.category ? t(row.category.name) : t("Chưa phân loại")}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {formatDate(row.date, locale)} · {row.account.name}
+                        {formatDate(row.date)} · {row.account.name}
                         {row.note ? ` · ${row.note}` : ""}
                       </p>
                     </div>

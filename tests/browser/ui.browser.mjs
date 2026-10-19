@@ -186,9 +186,15 @@ try {
     (await browser.evaluate(`window.__samePage === true`)) && (await browser.evaluate(`document.querySelector("#f-type").value`)) === "");
 
   const statementForm = `document.querySelector('form[action="/transactions/statement"]')`;
-  await browser.evaluate(`(() => { document.querySelector("#st-from").value = "2026-09-30"; document.querySelector("#st-to").value = "2026-09-01"; ${statementForm}.querySelector("button[type=submit]").click(); return true; })()`);
+  // Dates are typed as a person does, digits only: the field puts the slashes in.
+  await browser.type("#st-from", "30092026");
+  await browser.type("#st-to", "01092026");
+  const typed = await browser.evaluate(`[document.querySelector("#st-from").value, document.querySelector("#st-to").value]`);
+  check("a date field reads dd/mm/yyyy and adds the slashes while digits are typed", typed[0] === "30/09/2026" && typed[1] === "01/09/2026", typed.join(" "));
+  await browser.evaluate(`(() => { ${statementForm}.querySelector("button[type=submit]").click(); return true; })()`);
   check("a statement period that ends before it starts is caught in the form", (await browser.evaluate(`${statementForm}.querySelector('[role="alert"]')?.innerText ?? ""`)).includes("ngày bắt đầu phải trước"));
-  await browser.evaluate(`(() => { document.querySelector("#st-from").value = "2026-09-01"; ${statementForm}.querySelector("button[type=submit]").click(); return true; })()`);
+  await browser.type("#st-from", "01/09/2026");
+  await browser.evaluate(`(() => { ${statementForm}.querySelector("button[type=submit]").click(); return true; })()`);
   await browser.sleep(700);
   check("downloading a statement keeps the page, without the loading skeleton",
     await browser.evaluate(`location.pathname === "/transactions" && window.__samePage === true && !document.querySelector('[data-testid="navigation-pending"]') && !${statementForm}.querySelector('[role="alert"]')`));

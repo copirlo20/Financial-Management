@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { STATEMENT_MAX_DAYS, statementDays, type StatementError } from "@fm/shared/reports";
-import { idSchema } from "./common";
+import { dateText, idSchema } from "./common";
 
 // Query of GET /api/reports/statement. Every refusal carries a StatementError code as its message.
 const code = (error: StatementError) => ({ error });
 
 export const statementQuerySchema = z
   .object({
-    from: z.iso.date(code("invalid")),
-    to: z.iso.date(code("invalid")),
+    from: dateText.pipe(z.iso.date(code("invalid"))),
+    to: dateText.pipe(z.iso.date(code("invalid"))),
     // Empty or missing: every account of the user.
     accountId: z
       .string()

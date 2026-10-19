@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { setManualRate } from "@/app/actions/admin-exchange-rates";
+import { DateInput } from "@/components/date-input";
 import { FieldError } from "@/components/field-error";
 import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
@@ -47,10 +48,9 @@ export function RateForm({ currencies, baseCurrency, today }: Props) {
 
       <div className="grid gap-2">
         <Label htmlFor="xr-date">{t("Ngày")}</Label>
-        <Input
+        <DateInput
           id="xr-date"
           name="date"
-          type="date"
           required
           defaultValue={values.date}
           aria-invalid={Boolean(state?.errors?.date)}

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createTransfer } from "@/app/actions/transactions";
+import { DateInput } from "@/components/date-input";
 import { FieldError } from "@/components/field-error";
 import { FormMessage } from "@/components/form-message";
 import { useI18n } from "@/components/i18n-provider";
@@ -94,10 +95,9 @@ export function TransferForm({ accounts, defaults }: Props) {
 
       <div className="grid gap-2">
         <Label htmlFor="tf-date">{t("Ngày")}</Label>
-        <Input
+        <DateInput
           id="tf-date"
           name="date"
-          type="date"
           required
           defaultValue={values.date}
           aria-invalid={Boolean(state?.errors?.date)}

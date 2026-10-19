@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Cell } from "@fm/backend/imports/parse-file";
 import type { ImportView } from "@fm/backend/views/imports";
 import { formatMoney } from "@fm/shared/currencies";
-import { formatDate, isoDateToDate } from "@fm/shared/dates";
+import { formatDate, formatDay, isoDateToDate } from "@fm/shared/dates";
 import { columnLetter, formatImportErrors, serializeImportErrors } from "@fm/shared/imports";
 import { IMPORT_STATUS_LABELS } from "@fm/shared/labels";
 import { cancelImport, confirmDocumentImport, confirmImport } from "@/app/actions/imports";
@@ -31,7 +31,7 @@ type ExtractedRows = NonNullable<NonNullable<ImportView["pending"]>["document"]>
 function reviewRows({ rows, categories }: ExtractedRows, currency: string, locale: string): ReviewRow[] {
   return rows.map((row) => ({
     rowNumber: row.rowNumber,
-    date: formatDate(isoDateToDate(row.date), locale),
+    date: formatDate(isoDateToDate(row.date)),
     amount: formatMoney(row.amount, currency, locale),
     type: row.type,
     description: row.description,
@@ -39,9 +39,9 @@ function reviewRows({ rows, categories }: ExtractedRows, currency: string, local
   }));
 }
 
-function cellText(cell: Cell, locale: string): string {
+function cellText(cell: Cell): string {
   if (cell === null) return "";
-  return cell instanceof Date ? formatDate(cell, locale) : String(cell);
+  return cell instanceof Date ? formatDate(cell) : String(cell);
 }
 
 export default async function ImportDetailPage({ params }: PageProps<"/imports/[id]">) {
@@ -56,7 +56,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
     <div className="min-w-0">
       <h1 className="truncate text-2xl font-semibold">{batch.fileName}</h1>
       <p className="text-sm wrap-break-word text-muted-foreground">
-        {t("{0} · Tài khoản {1} ({2})", formatDate(batch.createdAt, locale), batch.account.name, batch.account.currency)} ·{" "}
+        {t("{0} · Tài khoản {1} ({2})", formatDay(batch.createdAt), batch.account.name, batch.account.currency)} ·{" "}
         {t(IMPORT_STATUS_LABELS[batch.status])}
       </p>
     </div>
@@ -172,7 +172,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
 
   const { suggestion, headerCells, columnCount, preview, totalRows } = table;
   const columns = Array.from({ length: columnCount }, (_, index) => {
-    const header = cellText(headerCells[index] ?? null, locale);
+    const header = cellText(headerCells[index] ?? null);
     return { value: String(index), label: header ? `${columnLetter(index)} — ${header}` : columnLetter(index) };
   });
 
@@ -209,7 +209,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
                     <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{rowIndex + 1}</td>
                     {columns.map((column) => (
                       <td key={column.value} className="max-w-56 truncate px-2 py-1.5 whitespace-nowrap">
-                        {cellText(row[Number(column.value)] ?? null, locale)}
+                        {cellText(row[Number(column.value)] ?? null)}
                       </td>
                     ))}
                   </tr>
