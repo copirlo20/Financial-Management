@@ -72,7 +72,7 @@ export function MappingForm({ action, columns, expenseCategories, incomeCategori
   );
 
   return (
-    <form action={formAction} className="grid gap-4 [&>*]:min-w-0">
+    <form action={formAction} className="grid gap-4 *:min-w-0">
       <FormNavigationMarker />
       <FormMessage message={state?.message} className="whitespace-pre-line" />
 

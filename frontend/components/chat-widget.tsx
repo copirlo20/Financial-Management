@@ -193,7 +193,7 @@ export function ChatWidget({ userName, provider }: { userName: string; provider:
               key={index}
               data-role={message.role}
               className={cn(
-                "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap",
+                "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap",
                 message.role === "user"
                   ? "self-end rounded-br-md bg-primary text-primary-foreground"
                   : "self-start rounded-bl-md border bg-card shadow-xs",

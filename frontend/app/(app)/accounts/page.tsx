@@ -52,12 +52,12 @@ export default async function AccountsPage() {
         </section>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-3 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-3 *:min-w-0">
           {active.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">{t("Bạn chưa có tài khoản nào. Hãy thêm ví tiền mặt hoặc tài khoản ngân hàng đầu tiên.")}</p>
           ) : (
-            <ul className="grid gap-3 [&>*]:min-w-0">
+            <ul className="grid gap-3 *:min-w-0">
               {active.map((account) => (
                 <li
                   key={account.id}

@@ -1,16 +1,14 @@
-import { ArrowLeftRight } from "lucide-react";
 import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
 import type { TransactionsView } from "@fm/backend/views/transactions";
-import { formatMoney } from "@fm/shared/currencies";
 import { isStatementError } from "@fm/shared/reports";
-import { formatDate, todayIsoDate } from "@fm/shared/dates";
+import { todayIsoDate } from "@fm/shared/dates";
 import { createTransaction, deleteTransaction } from "@/app/actions/transactions";
-import { CategoryBadge } from "@/components/category-icon";
 import { ConfirmButton } from "@/components/confirm-button";
 import { DateInput } from "@/components/date-input";
 import { NativeSelect } from "@/components/native-select";
+import { TransactionAmount, TransactionDetails, TransactionIcon } from "@/components/transaction-parts";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -124,7 +122,6 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
             <ul className="grid gap-2 *:min-w-0">
               {transactions.map((row) => {
                 const isTransfer = row.type === "TRANSFER";
-                const inflow = row.type === "INCOME" || (isTransfer && row.transferDirection === "IN");
                 const title = isTransfer
                   ? row.transferDirection === "OUT"
                     ? t("Chuyển đến {0}", counterpart(row.transferGroupId, "OUT"))
@@ -132,24 +129,12 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
                   : (row.category ? t(row.category.name) : t("Chưa phân loại"));
                 return (
                   <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-card shadow-xs p-3">
-                    {isTransfer ? (
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                        <ArrowLeftRight className="size-4" aria-hidden />
-                      </span>
-                    ) : (
-                      <CategoryBadge icon={row.category?.icon ?? null} color={row.category?.color ?? null} />
-                    )}
+                    <TransactionIcon row={row} />
                     <div className="min-w-0 flex-1 basis-40">
                       <p className="truncate font-medium">{title}</p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {formatDate(row.date)} · {row.account.name}
-                        {row.note ? ` · ${row.note}` : ""}
-                      </p>
+                      <TransactionDetails row={row} />
                     </div>
-                    <p className={`font-semibold tabular-nums ${inflow ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
-                      {inflow ? "+" : "−"}
-                      {formatMoney(row.amount.toString(), row.currency, locale)}
-                    </p>
+                    <TransactionAmount row={row} locale={locale} />
                     <div className="flex items-center gap-1">
                       {!isTransfer && (
                         <Link

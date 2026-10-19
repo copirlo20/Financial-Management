@@ -1,12 +1,12 @@
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, FileUp, PieChart, PiggyBank, Plus, Scale, type LucideIcon } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, FileUp, PieChart, PiggyBank, Plus, Scale, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { DashboardView } from "@fm/backend/views/overview";
 import { formatMoney } from "@fm/shared/currencies";
-import { formatDate } from "@fm/shared/dates";
 import { monthLabel, shiftMonth } from "@fm/shared/months";
 import { BudgetProgress } from "@/components/budget-progress";
-import { CategoryBadge } from "@/components/category-icon";
+import { ChartTable } from "@/components/chart-table";
+import { TransactionAmount, TransactionDetails, TransactionIcon } from "@/components/transaction-parts";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiLoad } from "@/lib/api/client";
@@ -37,7 +37,7 @@ function StatTile({ icon: Icon, label, value, note }: { icon: LucideIcon; label:
         </span>
         {label}
       </p>
-      <p className="mt-2 text-xl font-semibold break-words tabular-nums">{value}</p>
+      <p className="mt-2 text-xl font-semibold wrap-break-word tabular-nums">{value}</p>
       {note && <p className="mt-0.5 text-sm text-white/75">{note}</p>}
     </div>
   );
@@ -98,7 +98,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               {report.balances.map((balance) => (
                 <div key={balance.currency} className="min-w-0">
                   <p className="text-xs text-white/70">{t("Tổng {0}", balance.currency)}</p>
-                  <p className="text-2xl font-bold tabular-nums [overflow-wrap:anywhere] sm:text-3xl">
+                  <p className="text-2xl font-bold tabular-nums wrap-anywhere sm:text-3xl">
                     {formatMoney(balance.total.toString(), balance.currency, locale)}
                   </p>
                 </div>
@@ -106,7 +106,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               {converted && (
                 <div className="min-w-0">
                   <p className="text-xs text-white/70">{t("Tổng quy đổi sang {0}", currency)}</p>
-                  <p className="text-2xl font-bold tabular-nums [overflow-wrap:anywhere] sm:text-3xl">
+                  <p className="text-2xl font-bold tabular-nums wrap-anywhere sm:text-3xl">
                     ≈ {formatMoney(converted.total.toString(), currency, locale)}
                   </p>
                   {converted.missing.length > 0 && (
@@ -118,7 +118,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           )}
         </div>
 
-        <div role="group" aria-label={t("Số liệu chính")} className="relative mt-6 grid gap-3 sm:grid-cols-3 [&>*]:min-w-0">
+        <div role="group" aria-label={t("Số liệu chính")} className="relative mt-6 grid gap-3 sm:grid-cols-3 *:min-w-0">
           <StatTile icon={ArrowDownLeft} label={t("Thu nhập")} value={money(report.income)} />
           <StatTile icon={ArrowUpRight} label={t("Chi tiêu")} value={money(report.expense)} />
           <StatTile
@@ -134,7 +134,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           {t("{0} giao dịch ngoại tệ trong tháng chưa có tỷ giá quy đổi nên chưa được tính vào các số liệu trên.", report.unconvertedCount)}</p>
       )}
 
-      <nav aria-label={t("Lối tắt")} className="grid grid-cols-4 gap-2 sm:gap-3 [&>*]:min-w-0">
+      <nav aria-label={t("Lối tắt")} className="grid grid-cols-4 gap-2 sm:gap-3 *:min-w-0">
         {SHORTCUTS.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -144,12 +144,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             <span className="flex size-10 items-center justify-center rounded-full bg-accent text-primary">
               <Icon className="size-5" aria-hidden />
             </span>
-            <span className="[overflow-wrap:anywhere]">{t(label)}</span>
+            <span className="wrap-anywhere">{t(label)}</span>
           </Link>
         ))}
       </nav>
 
-      <div className="grid items-start gap-6 lg:grid-cols-2 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-2 *:min-w-0">
         <Card>
           <CardHeader>
             <CardTitle>{t("Chi tiêu theo danh mục")}</CardTitle>
@@ -168,31 +168,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     label: compact.format(entry.total.toNumber()),
                   }))}
                 />
-                <details>
-                  <summary className="cursor-pointer py-1.5 text-sm text-muted-foreground">{t("Xem dạng bảng")}</summary>
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full min-w-max text-sm">
-                    <thead className="text-left text-muted-foreground">
-                      <tr>
-                        <th scope="col" className="py-1 font-normal">{t("Danh mục")}</th>
-                        <th scope="col" className="py-1 text-right font-normal">{t("Đã chi")}</th>
-                        <th scope="col" className="py-1 text-right font-normal">{t("Tỷ trọng")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.expenseByCategory.map((entry) => (
-                        <tr key={entry.name} className="border-t">
-                          <th scope="row" className="py-1 text-left font-normal">{entry.name}</th>
-                          <td className="py-1 text-right tabular-nums">{money(entry.total)}</td>
-                          <td className="py-1 text-right tabular-nums">
-                            {Math.round(entry.total.div(report.expense).mul(100).toNumber())}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                </details>
+                <ChartTable
+                  summary={t("Xem dạng bảng")}
+                  columns={[t("Danh mục"), t("Đã chi"), t("Tỷ trọng")]}
+                  rows={report.expenseByCategory.map((entry) => ({
+                    key: entry.name,
+                    cells: [entry.name, money(entry.total), `${Math.round(entry.total.div(report.expense).mul(100).toNumber())}%`],
+                  }))}
+                />
               </>
             )}
           </CardContent>
@@ -217,31 +200,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     expense: point.expense.toNumber(),
                   }))}
                 />
-                <details>
-                  <summary className="cursor-pointer py-1.5 text-sm text-muted-foreground">{t("Xem dạng bảng")}</summary>
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full min-w-max text-sm">
-                    <thead className="text-left text-muted-foreground">
-                      <tr>
-                        <th scope="col" className="py-1 font-normal">{t("Tháng")}</th>
-                        <th scope="col" className="py-1 text-right font-normal">{t("Thu nhập")}</th>
-                        <th scope="col" className="py-1 text-right font-normal">{t("Chi tiêu")}</th>
-                        <th scope="col" className="py-1 text-right font-normal">{t("Chênh lệch")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trend.map((point) => (
-                        <tr key={point.month} className="border-t">
-                          <th scope="row" className="py-1 text-left font-normal">{monthLabel(point.month, t)}</th>
-                          <td className="py-1 text-right tabular-nums">{money(point.income)}</td>
-                          <td className="py-1 text-right tabular-nums">{money(point.expense)}</td>
-                          <td className="py-1 text-right tabular-nums">{money(point.income.minus(point.expense))}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                </details>
+                <ChartTable
+                  summary={t("Xem dạng bảng")}
+                  columns={[t("Tháng"), t("Thu nhập"), t("Chi tiêu"), t("Chênh lệch")]}
+                  rows={trend.map((point) => ({
+                    key: point.month,
+                    cells: [monthLabel(point.month, t), money(point.income), money(point.expense), money(point.income.minus(point.expense))],
+                  }))}
+                />
               </>
             )}
           </CardContent>
@@ -259,35 +225,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           {recent.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("Chưa có giao dịch nào.")}</p>
           ) : (
-            <ul className="grid divide-y [&>*]:min-w-0">
-              {recent.map((row) => {
-                const isTransfer = row.type === "TRANSFER";
-                const inflow = row.type === "INCOME" || (isTransfer && row.transferDirection === "IN");
-                return (
-                  <li key={row.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    {isTransfer ? (
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                        <ArrowLeftRight className="size-4" aria-hidden />
-                      </span>
-                    ) : (
-                      <CategoryBadge icon={row.category?.icon ?? null} color={row.category?.color ?? null} />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">
-                        {isTransfer ? t("Chuyển khoản") : row.category ? t(row.category.name) : t("Chưa phân loại")}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {formatDate(row.date)} · {row.account.name}
-                        {row.note ? ` · ${row.note}` : ""}
-                      </p>
-                    </div>
-                    <p className={`shrink-0 font-semibold tabular-nums ${inflow ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
-                      {inflow ? "+" : "−"}
-                      {formatMoney(row.amount.toString(), row.currency, locale)}
+            <ul className="grid divide-y *:min-w-0">
+              {recent.map((row) => (
+                <li key={row.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <TransactionIcon row={row} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">
+                      {row.type === "TRANSFER" ? t("Chuyển khoản") : row.category ? t(row.category.name) : t("Chưa phân loại")}
                     </p>
-                  </li>
-                );
-              })}
+                    <TransactionDetails row={row} />
+                  </div>
+                  <TransactionAmount row={row} locale={locale} className="shrink-0" />
+                </li>
+              ))}
             </ul>
           )}
         </CardContent>
@@ -300,7 +250,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <Link href={`/budgets?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>{t("Xem ngân sách")}</Link>
         </div>
         {alerts.length > 0 ? (
-          <ul className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
+          <ul className="grid gap-3 sm:grid-cols-2 *:min-w-0">
             {alerts.map((budget) => (
               <li key={budget.id}>
                 <BudgetProgress budget={budget} />

@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { root, check, report, decode, get, page, formWith, submit, db, one } from "./harness.mjs";
+import { root, check, report, decode, get, page, formWith, submit, db, one } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");

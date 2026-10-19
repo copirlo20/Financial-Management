@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from "node:fs";
-import { root, STAMP, check, report, decode, clean, page, formWith, submit, registerUser, db, one, userId } from "./harness.mjs";
+import { root, STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults } from "../harness.mjs";
 
 // Importing with the AI assistant. The AI API is replaced by tests/mock-ai.mjs, which the
 // runner starts and the app is pointed at; this suite queues the assistant's answers and reads back
@@ -16,18 +16,6 @@ const A = `e2e-ai-a-${STAMP}@example.com`;
 const B = `e2e-ai-b-${STAMP}@example.com`;
 
 // The value the server pre-selected in every select of a form, plus the header row input.
-function formDefaults(form) {
-  const values = {};
-  for (const [select] of form.matchAll(/<select[\s\S]*?<\/select>/g)) {
-    const name = select.match(/name="([^"]*)"/)?.[1];
-    const selected = select.match(/<option[^>]*value="([^"]*)"[^>]*selected/) ?? select.match(/<option[^>]*selected[^>]*value="([^"]*)"/);
-    if (name) values[name] = decode(selected?.[1] ?? select.match(/<option[^>]*value="([^"]*)"/)?.[1] ?? "");
-  }
-  const headerRow = form.match(/name="headerRow"[^>]*value="([^"]*)"/)?.[1] ?? form.match(/value="([^"]*)"[^>]*name="headerRow"/)?.[1];
-  if (headerRow !== undefined) values.headerRow = headerRow;
-  return values;
-}
-
 const queue = (answers) => fetch(`${MOCK}/__mock/queue`, { method: "POST", body: JSON.stringify(answers) });
 const sent = async () => (await fetch(`${MOCK}/__mock/requests`)).json();
 

@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "./harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;

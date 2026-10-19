@@ -25,7 +25,7 @@ export async function BudgetProgress({ budget, children }: { budget: BudgetStatu
   const percent = Math.round(budget.percent);
 
   return (
-    <div className="grid gap-2 rounded-lg border bg-card shadow-xs p-3 [&>*]:min-w-0">
+    <div className="grid gap-2 rounded-lg border bg-card shadow-xs p-3 *:min-w-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {budget.categoryId ? (
           <CategoryBadge icon={budget.icon} color={budget.color} />

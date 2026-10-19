@@ -1,23 +1,26 @@
-import { prisma } from "@fm/database";
+import { type Prisma, prisma } from "@fm/database";
 import { requireUser } from "../auth/current-user";
 import { idSchema } from "../validations/common";
 
 const HISTORY_LIMIT = 100;
+
+// What the list and the goal page both show of a goal.
+const GOAL_FIELDS = {
+  id: true,
+  name: true,
+  targetAmount: true,
+  currentAmount: true,
+  currency: true,
+  deadline: true,
+  status: true,
+} satisfies Prisma.SavingsGoalSelect;
 
 export async function savingsView() {
   const user = await requireUser();
   return prisma.savingsGoal.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      name: true,
-      targetAmount: true,
-      currentAmount: true,
-      currency: true,
-      deadline: true,
-      status: true,
-    },
+    select: GOAL_FIELDS,
   });
 }
 export type SavingsView = Awaited<ReturnType<typeof savingsView>>;
@@ -31,13 +34,7 @@ export async function savingsGoalView(goalId: string) {
   const goal = await prisma.savingsGoal.findFirst({
     where: { id: id.data, userId: user.id },
     select: {
-      id: true,
-      name: true,
-      targetAmount: true,
-      currentAmount: true,
-      currency: true,
-      deadline: true,
-      status: true,
+      ...GOAL_FIELDS,
       _count: { select: { contributions: true } },
       contributions: {
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],

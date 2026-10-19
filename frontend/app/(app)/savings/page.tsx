@@ -23,7 +23,7 @@ export default async function SavingsPage() {
   const archived = goals.filter((goal) => goal.status === "ARCHIVED");
 
   const goalList = (items: typeof goals) => (
-    <ul className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
+    <ul className="grid gap-3 sm:grid-cols-2 *:min-w-0">
       {items.map((goal) => (
         <li key={goal.id} className="grid gap-3 rounded-lg border bg-card shadow-xs p-4">
           <Link href={`/savings/${goal.id}`} className="truncate font-medium underline-offset-4 hover:underline">
@@ -39,8 +39,8 @@ export default async function SavingsPage() {
     <>
       <h1 className="text-2xl font-semibold">{t("Mục tiêu tiết kiệm")}</h1>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-4 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-4 *:min-w-0">
           {active.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">{t("Chưa có mục tiêu nào. Đặt một mục tiêu để theo dõi số tiền bạn để dành.")}</p>
           ) : (

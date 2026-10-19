@@ -1,5 +1,5 @@
 import { pdfText } from "../pdf-text.mjs";
-import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one } from "./harness.mjs";
+import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one } from "../harness.mjs";
 
 // The PDF account statement (/transactions/statement → backend GET /api/reports/statement): the figures for
 // one account and for all accounts, what is left out of the period, the refusals and the per-hour limit.

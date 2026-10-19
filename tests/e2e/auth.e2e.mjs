@@ -1,4 +1,4 @@
-import { BASE, PASSWORD, check, report, decode, cookieHeader, get, db, sleep } from "./harness.mjs";
+import { BASE, PASSWORD, check, report, decode, cookieHeader, get, db, sleep } from "../harness.mjs";
 
 const EMAIL = `e2e-${Date.now()}@example.com`;
 const NAME = "E2E Tester";

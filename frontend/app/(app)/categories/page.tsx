@@ -59,12 +59,12 @@ export default async function CategoriesPage() {
     <>
       <h1 className="text-2xl font-semibold">{t("Danh mục")}</h1>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
         <div className="grid gap-6">
           {(["EXPENSE", "INCOME"] as const).map((type) => (
-            <section key={type} className="grid gap-3 [&>*]:min-w-0">
+            <section key={type} className="grid gap-3 *:min-w-0">
               <h2 className="text-lg font-medium">{t(CATEGORY_TYPE_LABELS[type])}</h2>
-              <ul className="grid items-start gap-2 sm:grid-cols-2 [&>*]:min-w-0">
+              <ul className="grid items-start gap-2 sm:grid-cols-2 *:min-w-0">
                 {roots
                   .filter((category) => category.type === type)
                   .map((category) => {

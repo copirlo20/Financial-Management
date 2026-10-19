@@ -26,12 +26,12 @@ export default async function ImportsPage() {
     <>
       <h1 className="text-2xl font-semibold">{t("Nhập sao kê")}</h1>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-2 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-2 *:min-w-0">
           {batches.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">{t("Chưa có lần nhập nào. Tải file sao kê từ ngân hàng để thêm nhiều giao dịch cùng lúc.")}</p>
           ) : (
-            <ul className="grid gap-2 [&>*]:min-w-0">
+            <ul className="grid gap-2 *:min-w-0">
               {batches.map((batch) => (
                 <li key={batch.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-card shadow-xs p-3">
                   <div className="min-w-0 flex-1 basis-48">

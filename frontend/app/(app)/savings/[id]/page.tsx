@@ -64,13 +64,13 @@ export default async function SavingsGoalPage({ params }: PageProps<"/savings/[i
         <GoalProgress goal={goal} />
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-3 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-3 *:min-w-0">
           <h2 className="text-lg font-medium">{t("Lịch sử nạp và rút")}</h2>
           {goal.contributions.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">{t("Chưa có khoản nào. Ghi nhận lần nạp đầu tiên của bạn.")}</p>
           ) : (
-            <ul className="grid gap-2 [&>*]:min-w-0">
+            <ul className="grid gap-2 *:min-w-0">
               {goal.contributions.map((contribution) => {
                 const deposit = contribution.amount.isPositive();
                 return (

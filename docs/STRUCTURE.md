@@ -54,7 +54,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
-| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`), ô nhập ngày `dd/mm/yyyy` (`date-input.tsx`)… |
+| `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`), ô nhập ngày `dd/mm/yyyy` (`date-input.tsx`), các phần của một dòng giao dịch (`transaction-parts.tsx`: biểu tượng, dòng ngày · tài khoản · ghi chú, số tiền có dấu và màu), bảng số liệu sau biểu đồ (`chart-table.tsx`)… |
 | `components/ui/` | Thành phần nền kiểu shadcn/ui: `button`, `card`, `input`, `label`, `alert-dialog`, `chart` |
 
 ## backend/
@@ -98,7 +98,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | --- | --- |
 | `run-e2e.mjs` | Trình chạy: build frontend, dựng backend và frontend trên cổng riêng cùng máy chủ AI giả, chạy từng bộ, dọn dữ liệu. Dựng thêm một bản app dùng OpenAI để chạy lại các bộ AI |
 | `e2e/*.e2e.mjs` | Bộ kiểm thử qua HTTP như trình duyệt không có JavaScript (biểu mẫu, cookie, chuyển hướng), kiểm cả trang lẫn database |
-| `e2e/harness.mjs` | Phần dùng chung của các bộ e2e: cấu hình, `check()`/`report()`, đọc trang và form, gửi form (`submit`, cả file), cookie, đăng ký người dùng, kết nối database |
+| `harness.mjs` | Phần dùng chung của mọi bộ kiểm thử (e2e và trình duyệt): cấu hình, `check()`/`report()`, đọc trang và form, gửi form (`submit`, cả file; `formDefaults`), cookie (`cookieHeader`, `browserCookies` cho trình duyệt), đăng ký người dùng, kết nối database |
 | `browser/*.browser.mjs`, `cdp.mjs` | Bộ kiểm thử trong Edge/Chrome thật qua DevTools Protocol: biểu đồ, modal, giao diện tối, điện thoại |
 | `mock-ai.mjs` | Máy chủ giả của Claude và OpenAI: không bao giờ gọi API thật |
 | `pdf-text.mjs` | Đọc chữ trong PDF do app xuất, để kiểm số liệu |

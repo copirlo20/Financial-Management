@@ -1,7 +1,8 @@
 import { createRequire } from "node:module";
 
-// What every e2e suite shares: the project's settings, a PASS/FAIL tally, reading pages and their forms,
-// sending forms the way a browser without JavaScript does, cookies, and the database.
+// What every suite shares (tests/e2e over HTTP, tests/browser in a real browser): the project's settings,
+// a PASS/FAIL tally, reading pages and their forms, sending forms the way a browser without JavaScript does,
+// cookies, signing up, and the database.
 // Suites run through tests/run-e2e.mjs, which sets the working directory to the project root.
 
 export const root = process.cwd().split("\\").join("/") + "/";
@@ -46,6 +47,8 @@ export function readCookies(res, jar = {}) {
 }
 // A cleared cookie (empty value) is left out, as the browser drops it.
 export const cookieHeader = (jar) => Object.entries(jar).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ");
+// The same cookies for a real browser (DevTools Protocol Network.setCookie).
+export const browserCookies = (jar) => Object.entries(jar).filter(([, v]) => v).map(([name, value]) => ({ name, value, httpOnly: true }));
 
 // ---------- Requests ----------
 export const get = (path, jar = {}) => fetch(BASE + path, { redirect: "manual", headers: { cookie: cookieHeader(jar) } });
@@ -70,6 +73,20 @@ export async function submit(path, form, data, jar) {
     else body.append(k, v);
   }
   return fetch(BASE + path, { method: "POST", body, redirect: "manual", headers: { cookie: cookieHeader(jar), origin: BASE } });
+}
+
+// What a form would send untouched: each <select>'s chosen (or first) option, and the header-row field
+// when there is one.
+export function formDefaults(form) {
+  const values = {};
+  for (const [select] of form.matchAll(/<select[\s\S]*?<\/select>/g)) {
+    const name = select.match(/name="([^"]*)"/)?.[1];
+    const selected = select.match(/<option[^>]*value="([^"]*)"[^>]*selected/) ?? select.match(/<option[^>]*selected[^>]*value="([^"]*)"/);
+    if (name) values[name] = decode(selected?.[1] ?? select.match(/<option[^>]*value="([^"]*)"/)?.[1] ?? "");
+  }
+  const headerRow = form.match(/name="headerRow"[^>]*value="([^"]*)"/)?.[1] ?? form.match(/value="([^"]*)"[^>]*name="headerRow"/)?.[1];
+  if (headerRow !== undefined) values.headerRow = headerRow;
+  return values;
 }
 
 // A new account, signed in: the cookies its registration set.

@@ -1,4 +1,4 @@
-import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one } from "./harness.mjs";
+import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one } from "../harness.mjs";
 
 // The chat assistant (/api/chat). The AI API is replaced by tests/mock-ai.mjs: this suite queues
 // what the "model" says (text, or a request to call a tool) and reads back what the app sent it, which is

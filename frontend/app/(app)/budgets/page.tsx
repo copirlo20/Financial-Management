@@ -59,8 +59,8 @@ export default async function BudgetsPage({ searchParams }: PageProps<"/budgets"
           {t("{0} khoản chi ngoại tệ trong tháng chưa có tỷ giá quy đổi nên chưa được tính vào ngân sách.", unconvertedCount)}</p>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-3 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-3 *:min-w-0">
           {statuses.length === 0 ? (
             <div className="grid justify-items-center gap-3 rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">
               <p>{t("Chưa có ngân sách nào cho {0}.", monthLabel(month, t).toLowerCase())}</p>
@@ -73,7 +73,7 @@ export default async function BudgetsPage({ searchParams }: PageProps<"/budgets"
               )}
             </div>
           ) : (
-            <ul className="grid gap-3 [&>*]:min-w-0">
+            <ul className="grid gap-3 *:min-w-0">
               {statuses.map((budget) => (
                 <li key={budget.id}>
                   <BudgetProgress budget={budget}>

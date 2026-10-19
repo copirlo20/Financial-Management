@@ -31,7 +31,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("text-base leading-snug font-semibold [overflow-wrap:anywhere]", className)}
+      className={cn("text-base leading-snug font-semibold wrap-anywhere", className)}
       {...props}
     />
   )
@@ -41,7 +41,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground [overflow-wrap:anywhere]", className)}
+      className={cn("text-sm text-muted-foreground wrap-anywhere", className)}
       {...props}
     />
   )

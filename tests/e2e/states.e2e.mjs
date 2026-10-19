@@ -1,4 +1,4 @@
-import { BASE, check, report, decode, clean, get, db } from "./harness.mjs";
+import { BASE, check, report, decode, clean, get, db } from "../harness.mjs";
 // Empty states for a brand-new user, and not-found pages.
 
 const EMAIL = `e2e-states-${Date.now()}@example.com`;

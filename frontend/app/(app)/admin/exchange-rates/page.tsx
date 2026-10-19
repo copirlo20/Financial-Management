@@ -31,9 +31,9 @@ export default async function AdminExchangeRatesPage() {
         </p>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
         <div className="grid gap-6">
-          <section className="grid gap-3 [&>*]:min-w-0">
+          <section className="grid gap-3 *:min-w-0">
             <h2 className="text-lg font-medium">{t("Tỷ giá mới nhất")}</h2>
             <div className="overflow-x-auto">
             <table className="w-full min-w-max text-sm">
@@ -59,14 +59,14 @@ export default async function AdminExchangeRatesPage() {
             </div>
           </section>
 
-          <section className="grid gap-3 [&>*]:min-w-0">
+          <section className="grid gap-3 *:min-w-0">
             <h2 className="text-lg font-medium">{t("Tỷ giá nhập tay")}</h2>
             {manual.length === 0 ? (
               <p className="rounded-lg border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">
                 {t("Chưa có tỷ giá nhập tay nào. Mọi tỷ giá đang lấy tự động từ nguồn.")}
               </p>
             ) : (
-              <ul className="grid gap-2 [&>*]:min-w-0">
+              <ul className="grid gap-2 *:min-w-0">
                 {manual.map((row) => (
                   <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card shadow-xs p-3">
                     <p className="tabular-nums">

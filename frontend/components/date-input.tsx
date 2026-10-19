@@ -22,7 +22,7 @@ type Props = Omit<React.ComponentProps<"input">, "type" | "value" | "defaultValu
 // Puts the slashes in while digits are typed: "1910" → "19/10/", "5/" → "05/"; a whole date typed over the
 // field or pasted ("19102026", "2026-10-19") is shown as dd/mm/yyyy. Deleting is left alone: from the end
 // (so a slash can be removed) and in the middle (so the other digits keep their place).
-export function maskDate(raw: string, previous: string): string {
+function maskDate(raw: string, previous: string): string {
   const iso = parseDateText(raw);
   if (iso) return isoDateToText(iso);
   if (raw.length < previous.length && (previous.startsWith(raw) || /[/.-]/.test(raw))) return raw;

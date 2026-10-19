@@ -1,46 +1,26 @@
 // Behaviour that only exists with JavaScript running: charts, confirmation dialogs, in-place form
 // updates, the navigation skeleton, and the error boundary. Uses a real headless browser.
-import { createRequire } from "node:module";
 import path from "node:path";
+import { BASE, STAMP, browserCookies, check, db, one, registerUser, report } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const EMAIL = `e2e-browser-${Date.now()}@example.com`;
+const EMAIL = `e2e-browser-${STAMP}@example.com`;
 // Set E2E_SCREENSHOTS to a folder to keep a picture of each state for a human to look at.
 const shots = process.env.E2E_SCREENSHOTS;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
 
 if (!findBrowser()) {
   console.log("SKIP browser tests: no Edge or Chrome found (set E2E_BROWSER to its path).");
   process.exit(0);
 }
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 const text = `document.body.innerText`;
 const location_ok = (pathname) => pathname.endsWith("/edit");
 let browser;
 
 try {
   // Sign up through the real form to get session cookies.
-  const decode = (s) => s.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
-  const registerPage = await (await fetch(BASE + "/register")).text();
-  const form = registerPage.match(/<form[\s\S]*?<\/form>/)[0];
-  const body = new FormData();
-  for (const [tag] of form.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) body.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  for (const [k, v] of Object.entries({ name: "Trình Duyệt", email: EMAIL, password: "abc12345", confirmPassword: "abc12345" })) body.append(k, v);
-  const response = await fetch(BASE + "/register", { method: "POST", body, redirect: "manual", headers: { origin: BASE } });
-  const cookies = response.headers.getSetCookie().map((c) => c.split(";")[0]).map((pair) => ({ name: pair.slice(0, pair.indexOf("=")), value: pair.slice(pair.indexOf("=") + 1), httpOnly: true }));
+  const cookies = browserCookies(await registerUser(EMAIL, "Trình Duyệt"));
   const userId = (await one(`select id from users where email = $1`, [EMAIL])).id;
 
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
@@ -328,8 +308,7 @@ try {
   const scripts = [...html.matchAll(/<script[\s>][^>]*>/g)].map((m) => m[0]);
   check("every script tag on the page carries the nonce", scripts.length > 0 && scripts.every((tag) => / nonce="[^"]+"/.test(tag)), scripts.find((tag) => !/ nonce=/.test(tag)));
 } catch (error) {
-  console.log(`FAIL browser suite aborted — ${error.message}`);
-  failures++;
+  check("browser suite aborted", false, error.message);
   // What the page and the server were doing when the suite gave up, to tell a stuck browser from a stuck server.
   for (const probe of ["location.href", "document.readyState", "document.visibilityState"]) {
     const answer = await Promise.race([browser?.evaluate(probe).catch((e) => `error: ${e.message}`), new Promise((resolve) => setTimeout(() => resolve("no answer in 4s"), 4000))]);
@@ -343,5 +322,4 @@ try {
   await db.query(`delete from users where email = $1`, [EMAIL]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

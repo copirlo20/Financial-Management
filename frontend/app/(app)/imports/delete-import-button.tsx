@@ -25,6 +25,16 @@ export function DeleteImportButton({ id, fileName, transactionCount, appearance 
       ? t("Xóa kèm {0} giao dịch của nó và trả lại số dư tài khoản. Thao tác này không thể hoàn tác.", transactionCount)
       : undefined;
 
+  // The same question whichever button asks it.
+  const confirm = {
+    disabled: pending,
+    confirmMessage: t("Xóa lần nhập này?"),
+    confirmSubject: fileName,
+    confirmDetail: detail,
+    confirmLabel: t("Xóa"),
+    confirmIcon: "trash" as const,
+  };
+
   return (
     <form action={formAction} className={appearance === "icon" ? "contents" : "grid gap-2"}>
       <input type="hidden" name="id" value={id} />
@@ -32,27 +42,17 @@ export function DeleteImportButton({ id, fileName, transactionCount, appearance 
         <ConfirmButton
           variant="ghost"
           size="icon-sm"
-          disabled={pending}
           aria-label={t("Xóa lần nhập \"{0}\"", fileName)}
           className="text-muted-foreground hover:text-destructive"
-          confirmMessage={t("Xóa lần nhập này?")}
-          confirmSubject={fileName}
-          confirmDetail={detail}
-          confirmLabel={t("Xóa")}
-          confirmIcon="trash"
+          {...confirm}
         >
           <Trash2 />
         </ConfirmButton>
       ) : (
         <ConfirmButton
           variant="outline"
-          disabled={pending}
           className="justify-self-start text-destructive hover:text-destructive"
-          confirmMessage={t("Xóa lần nhập này?")}
-          confirmSubject={fileName}
-          confirmDetail={detail}
-          confirmLabel={t("Xóa")}
-          confirmIcon="trash"
+          {...confirm}
         >
           <Trash2 />
           {pending ? t("Đang xóa...") : t("Xóa lần nhập này")}

@@ -51,7 +51,7 @@ Số liệu thu/chi dùng **bản chụp quy đổi của từng giao dịch** (
 
 - Thẻ gradient: lời chào, nút sang tháng trước/sau (hai nút chỉ là liên kết `?month=`), số dư, ba ô Thu / Chi / Chênh lệch.
 - Bốn lối tắt: Thêm giao dịch, Nhập sao kê, Ngân sách, Tiết kiệm.
-- Hai biểu đồ, mỗi biểu đồ có **"Xem dạng bảng"** (bảng số liệu đầy đủ, cho người dùng trình đọc màn hình). Biểu đồ ẩn với trình đọc màn hình (`aria-hidden`), bảng là bản thay thế. Rê chuột (hoặc chạm) vào cột hiện số tiền chính xác.
+- Hai biểu đồ, mỗi biểu đồ có **"Xem dạng bảng"** (bảng số liệu đầy đủ, cho người dùng trình đọc màn hình; component `ChartTable`). Biểu đồ ẩn với trình đọc màn hình (`aria-hidden`), bảng là bản thay thế. Rê chuột (hoặc chạm) vào cột hiện số tiền chính xác.
 - Màu biểu đồ: xanh dương cho thu/đã chi và cam cho chi, **không** dùng xanh lá hay đỏ vì hai màu này dành cho trạng thái. Có bộ màu riêng cho giao diện tối ([ui-flow.md](ui-flow.md)).
 - Trạng thái rỗng: "Chưa có khoản chi nào trong tháng này", "Chưa có giao dịch nào trong khoảng thời gian này", "Bạn chưa có tài khoản nào".
 

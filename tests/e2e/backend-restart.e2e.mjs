@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
-import { root, check, report, decode, readCookies, cookieHeader, db, sleep } from "./harness.mjs";
+import { root, check, report, decode, readCookies, cookieHeader, db, sleep } from "../harness.mjs";
 
 // What the frontend does while the backend restarts (a code change in development, a deploy in production):
 // calls wait for it to come back instead of failing, and nobody is signed out because of it.

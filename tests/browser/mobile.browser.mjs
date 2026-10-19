@@ -1,49 +1,29 @@
 // The app on a phone: touch input, small screens, and data that stresses the layout (long unbroken names,
 // huge amounts, wide statement files). Uses a real headless Edge/Chrome with phone emulation.
-import { createRequire } from "node:module";
 import path from "node:path";
+import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, root } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
-// Run through tests/run-e2e.mjs, which sets the working directory to the project root.
-const root = process.cwd().split("\\").join("/") + "/";
-process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const STAMP = Date.now();
 // A long address with no breaking points: the profile card has to cope with it.
 const EMAIL = `e2e-mobile-${"a".repeat(55)}-${STAMP}@example.com`;
 const shots = process.env.E2E_SCREENSHOTS;
-let failures = 0;
-function check(label, cond, extra = "") {
-  console.log(`${cond ? "PASS" : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
-  if (!cond) failures++;
-}
 
 if (!findBrowser()) {
   console.log("SKIP mobile tests: no Edge or Chrome found (set E2E_BROWSER to its path).");
   process.exit(0);
 }
 
-const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 await db.connect();
-const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 const text = `document.body.innerText`;
-const decode = (s) => s.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
 // 60 characters with no spaces: nothing can wrap, so any layout that assumes short names breaks.
 const UNBROKEN = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 let browser;
 
 try {
   // ---------- Account and data ----------
-  const registerPage = await (await fetch(BASE + "/register")).text();
-  const registerForm = registerPage.match(/<form[\s\S]*?<\/form>/)[0];
-  const registerBody = new FormData();
-  for (const [tag] of registerForm.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) registerBody.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  for (const [k, v] of Object.entries({ name: "Nguyễn Văn An", email: EMAIL, password: "abc12345", confirmPassword: "abc12345" })) registerBody.append(k, v);
-  const registered = await fetch(BASE + "/register", { method: "POST", body: registerBody, redirect: "manual", headers: { origin: BASE } });
-  const cookies = registered.headers.getSetCookie().map((c) => c.split(";")[0]).map((pair) => ({ name: pair.slice(0, pair.indexOf("=")), value: pair.slice(pair.indexOf("=") + 1), httpOnly: true }));
-  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+  const jar = await registerUser(EMAIL, "Nguyễn Văn An");
+  const cookies = browserCookies(jar);
+  const cookie = cookieHeader(jar);
   const userId = (await one(`select id from users where email = $1`, [EMAIL])).id;
   await db.query(`update users set role = 'ADMIN' where id = $1`, [userId]);
 
@@ -75,14 +55,14 @@ try {
     [userId, accountA, UNBROKEN + UNBROKEN + UNBROKEN + ".csv", JSON.stringify({ rows: Array.from({ length: 6 }, (_, i) => ({ row: i + 3, message: "Ngày không hợp lệ hoặc không đúng định dạng đã chọn." })), more: 0 })]);
 
   // A statement with many wide columns, uploaded through the real form.
-  const importsPage = await (await fetch(BASE + "/imports", { headers: { cookie: cookieHeader } })).text();
+  const importsPage = await (await fetch(BASE + "/imports", { headers: { cookie } })).text();
   const uploadForm = [...importsPage.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]).find((f) => f.includes('name="file"'));
   const upload = new FormData();
   for (const [tag] of uploadForm.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) upload.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
   upload.append("accountId", accountA);
   const wide = ["Ngày giao dịch,Diễn giải,Số tiền,Số dư sau giao dịch,Mã tham chiếu,Chi nhánh thực hiện,Kênh giao dịch,Ghi chú thêm", ...Array.from({ length: 6 }, (_, i) => `0${i + 1}/10/2026,Thanh toán hóa đơn điện nước tháng này cho khách hàng ${i},-${(i + 1) * 100000},${12000000 - i * 100000},FT26${280000 + i}XYZ,Chi nhánh Hà Nội - Phòng giao dịch Đống Đa,Internet Banking,Ghi chú dài để kiểm tra bảng xem trước`)].join("\n");
   upload.append("file", new Blob([wide]), "sao-ke-rong.csv");
-  const uploaded = await fetch(BASE + "/imports", { method: "POST", body: upload, redirect: "manual", headers: { cookie: cookieHeader, origin: BASE } });
+  const uploaded = await fetch(BASE + "/imports", { method: "POST", body: upload, redirect: "manual", headers: { cookie, origin: BASE } });
   const pendingImportId = uploaded.headers.get("location").split("/").pop();
   const systemCategoryId = food;
 
@@ -266,8 +246,7 @@ try {
   const unexpected = browser.pageErrors.filter((error) => !/digest/i.test(error));
   check("no JavaScript errors while using the app on the phone", unexpected.length === 0, unexpected.slice(0, 3).join(" | "));
 } catch (error) {
-  console.log(`FAIL mobile suite aborted — ${error.message}`);
-  failures++;
+  check("mobile suite aborted", false, error.message);
   // What the page was doing when the suite gave up: an answer here means the page is alive and only the
   // step that timed out was stuck; no answer means the page itself is hung.
   for (const probe of ["location.pathname", "document.visibilityState", "document.activeElement?.tagName", "Boolean(document.querySelector('#more-menu'))"]) {
@@ -282,5 +261,4 @@ try {
   await db.query(`delete from users where email = $1`, [EMAIL]);
   await db.end();
 }
-console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);
-process.exitCode = failures === 0 ? 0 : 1;
+report();

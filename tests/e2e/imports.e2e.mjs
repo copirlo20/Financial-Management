@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { crc32, deflateRawSync } from "node:zlib";
-import { root, STAMP, check, report, decode, clean, get, page, formWith, submit, registerUser, db, one, userId } from "./harness.mjs";
+import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");
@@ -10,17 +10,6 @@ const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
 
 // Reads the values the server pre-selected in the mapping form (i.e. the auto-detected mapping).
-function formDefaults(form) {
-  const values = {};
-  for (const [select] of form.matchAll(/<select[\s\S]*?<\/select>/g)) {
-    const name = select.match(/name="([^"]*)"/)?.[1];
-    const selected = select.match(/<option[^>]*value="([^"]*)"[^>]*selected/) ?? select.match(/<option[^>]*selected[^>]*value="([^"]*)"/);
-    if (name) values[name] = decode(selected?.[1] ?? select.match(/<option[^>]*value="([^"]*)"/)?.[1] ?? "");
-  }
-  values.headerRow = form.match(/name="headerRow"[^>]*value="([^"]*)"/)?.[1] ?? form.match(/value="([^"]*)"[^>]*name="headerRow"/)?.[1];
-  return values;
-}
-
 await db.connect();
 
 async function addAccount(uid, name, currency, balance) {

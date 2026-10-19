@@ -1,4 +1,4 @@
-import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one } from "./harness.mjs";
+import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
