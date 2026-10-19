@@ -59,61 +59,61 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
     <>
       <h1 className="text-2xl font-semibold">{t("Giao dịch")}</h1>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
-        <section className="grid gap-4 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem] *:min-w-0">
+        <section className="grid gap-4 *:min-w-0">
           <details open={hasFilter} className="rounded-lg border bg-card shadow-xs p-4">
             <summary className="cursor-pointer py-1.5 text-sm font-medium">{t("Bộ lọc")}</summary>
             {/* next/form: filtering is a client-side navigation (a plain GET form reloads the whole page, and so
                 does going Back to it). Without JavaScript it still works as an ordinary GET form. The key gives
                 the fields their starting values again when the filter in the address changes (Back, "Xóa lọc"). */}
-            <Form key={JSON.stringify(filter)} action="/transactions" className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
-            <div className="grid gap-1.5">
-              <Label htmlFor="f-account">{t("Tài khoản")}</Label>
-              <NativeSelect id="f-account" name="accountId" defaultValue={filter.accountId ?? ""}>
-                <option value="">{t("Tất cả")}</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                    {account.archivedAt ? t(" (đã lưu trữ)") : ""}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="f-category">{t("Danh mục")}</Label>
-              <NativeSelect id="f-category" name="categoryId" defaultValue={filter.categoryId ?? ""}>
-                <option value="">{t("Tất cả")}</option>
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="f-type">{t("Loại")}</Label>
-              <NativeSelect id="f-type" name="type" defaultValue={filter.type ?? ""}>
-                <option value="">{t("Tất cả")}</option>
-                <option value="EXPENSE">{t("Khoản chi")}</option>
-                <option value="INCOME">{t("Khoản thu")}</option>
-                <option value="TRANSFER">{t("Chuyển khoản")}</option>
-              </NativeSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="f-from">{t("Từ ngày")}</Label>
-              <DateInput id="f-from" name="from" defaultValue={filter.from ?? ""} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="f-to">{t("Đến ngày")}</Label>
-              <DateInput id="f-to" name="to" defaultValue={filter.to ?? ""} />
-            </div>
-            <div className="flex items-end gap-2">
-              <Button type="submit" variant="outline">{t("Lọc")}</Button>
-              {hasFilter && (
-                <Link href="/transactions" className={buttonVariants({ variant: "ghost" })}>{t("Xóa lọc")}</Link>
-              )}
-            </div>
-          </Form>
+            <Form key={JSON.stringify(filter)} action="/transactions" className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 *:min-w-0">
+              <div className="grid gap-1.5">
+                <Label htmlFor="f-account">{t("Tài khoản")}</Label>
+                <NativeSelect id="f-account" name="accountId" defaultValue={filter.accountId ?? ""}>
+                  <option value="">{t("Tất cả")}</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                      {account.archivedAt ? t(" (đã lưu trữ)") : ""}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="f-category">{t("Danh mục")}</Label>
+                <NativeSelect id="f-category" name="categoryId" defaultValue={filter.categoryId ?? ""}>
+                  <option value="">{t("Tất cả")}</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="f-type">{t("Loại")}</Label>
+                <NativeSelect id="f-type" name="type" defaultValue={filter.type ?? ""}>
+                  <option value="">{t("Tất cả")}</option>
+                  <option value="EXPENSE">{t("Khoản chi")}</option>
+                  <option value="INCOME">{t("Khoản thu")}</option>
+                  <option value="TRANSFER">{t("Chuyển khoản")}</option>
+                </NativeSelect>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="f-from">{t("Từ ngày")}</Label>
+                <DateInput id="f-from" name="from" defaultValue={filter.from ?? ""} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="f-to">{t("Đến ngày")}</Label>
+                <DateInput id="f-to" name="to" defaultValue={filter.to ?? ""} />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button type="submit" variant="outline">{t("Lọc")}</Button>
+                {hasFilter && (
+                  <Link href="/transactions" className={buttonVariants({ variant: "ghost" })}>{t("Xóa lọc")}</Link>
+                )}
+              </div>
+            </Form>
           </details>
 
           {transactions.length === 0 ? (
@@ -121,7 +121,7 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
               {hasFilter ? t("Không có giao dịch nào khớp bộ lọc.") : t("Chưa có giao dịch nào.")}
             </p>
           ) : (
-            <ul className="grid gap-2 [&>*]:min-w-0">
+            <ul className="grid gap-2 *:min-w-0">
               {transactions.map((row) => {
                 const isTransfer = row.type === "TRANSFER";
                 const inflow = row.type === "INCOME" || (isTransfer && row.transferDirection === "IN");

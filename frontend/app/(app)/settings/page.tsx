@@ -31,7 +31,7 @@ export default async function SettingsPage() {
     <>
       <h1 className="text-2xl font-semibold">{t("Cài đặt")}</h1>
 
-      <div className="grid items-start gap-6 lg:grid-cols-2 [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-2 *:min-w-0">
         <Card>
           <CardHeader>
             <CardTitle>{t("Hồ sơ")}</CardTitle>
