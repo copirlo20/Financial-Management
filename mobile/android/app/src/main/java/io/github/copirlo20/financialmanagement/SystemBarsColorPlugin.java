@@ -29,18 +29,27 @@ import java.nio.charset.StandardCharsets;
 public class SystemBarsColorPlugin extends Plugin {
 
     private Integer colour;
+    private WebViewListener pageListener;
 
     @Override
     public void load() {
         getBridge().getWebView().setBackgroundColor(Color.TRANSPARENT);
         getBridge().executeOnMainThread(this::apply);
+    }
+
+    // Not in load(): the bridge replaces its list of WebView listeners after loading the plugins, which would
+    // drop one added there. Capacitor's SystemBars plugin adds its own here for the same reason.
+    @Override
+    protected void handleOnStart() {
+        if (pageListener != null) return;
         String script = readScript();
-        getBridge().addWebViewListener(new WebViewListener() {
+        pageListener = new WebViewListener() {
             @Override
             public void onPageLoaded(WebView view) {
                 view.evaluateJavascript(script, null);
             }
-        });
+        };
+        getBridge().addWebViewListener(pageListener);
     }
 
     @Override
