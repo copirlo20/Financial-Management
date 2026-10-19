@@ -14,7 +14,7 @@ import * as settings from "./handlers/settings";
 import * as transactions from "./handlers/transactions";
 import { HttpError } from "./http/errors";
 import { command, routeParam, view } from "./http/routing";
-import { buildCsvTemplate, buildXlsxTemplate } from "./imports/template";
+import { buildXlsxTemplate } from "./imports/template";
 import { hit } from "./rate-limit";
 import { buildStatement } from "./reports/statement";
 import { renderStatementPdf } from "./reports/statement-pdf";
@@ -129,15 +129,13 @@ export function apiRoutes(): Router {
 
   // ---------- Statement imports ----------
   view(router, "/imports", () => importsView());
-  router.get("/imports/template", async (req, res) => {
+  router.get("/imports/template", async (_req, res) => {
     await requireUser();
-    const format = req.query.format;
-    if (format !== "csv" && format !== "xlsx") throw new HttpError(400, "Unknown format");
-    const body = format === "csv" ? buildCsvTemplate() : await buildXlsxTemplate();
+    const body = await buildXlsxTemplate();
     res
       .set({
-        "Content-Type": format === "csv" ? "text/csv; charset=utf-8" : XLSX_TYPE,
-        "Content-Disposition": `attachment; filename="mau-sao-ke.${format}"`,
+        "Content-Type": XLSX_TYPE,
+        "Content-Disposition": `attachment; filename="mau-sao-ke.xlsx"`,
         "Cache-Control": "private, no-store",
       })
       .send(Buffer.from(body));

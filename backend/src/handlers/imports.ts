@@ -21,11 +21,12 @@ import { buildRows, type ParsedRow, type RowError } from "../imports/mapping";
 import {
   MAX_FILE_BYTES,
   StatementFileError,
+  UnreadablePdfError,
   parseStatementFile,
   statementExtension,
   type Cell,
 } from "../imports/parse-file";
-import { deleteImportFile, importFileExtension, readImportFile, saveImportFile } from "../imports/storage";
+import { deleteImportFile, readImportFile, saveImportFile } from "../imports/storage";
 import { idSchema } from "../validations/common";
 import { documentConfirmSchema, mappingSchema } from "../validations/import";
 
@@ -73,19 +74,8 @@ export async function uploadImport(_prev: UploadFormState, formData: FormData): 
     return { errors: { file: ["File vượt quá 5 MB."] }, values };
   }
   const extension = statementExtension(file.name);
-  const isPdf = /\.pdf$/i.test(file.name);
-  if (!extension && !isPdf) {
-    const supported = aiImportAvailable()
-      ? "Chỉ hỗ trợ file .csv, .xlsx và .pdf (file .xls cũ cần lưu lại thành .xlsx)."
-      : "Chỉ hỗ trợ file .csv và .xlsx (file .xls cũ cần lưu lại thành .xlsx).";
-    return { errors: { file: [supported] }, values };
-  }
-  // A PDF has no cells to read, so without the assistant there is nothing to import from it.
-  if (isPdf && !aiImportAvailable()) {
-    return { errors: { file: ["File PDF cần trợ lý AI, nhưng trợ lý AI chưa được cấu hình trên máy chủ."] }, values };
-  }
-  if (isPdf && !useAi) {
-    return { errors: { file: ["File PDF chỉ đọc được bằng trợ lý AI. Hãy bật trợ lý AI rồi tải lại."] }, values };
+  if (!extension) {
+    return { errors: { file: ["Chỉ hỗ trợ file .pdf và .xlsx (file .xls cũ cần lưu lại thành .xlsx)."] }, values };
   }
 
   const account = await prisma.account.findFirst({
@@ -103,22 +93,20 @@ export async function uploadImport(_prev: UploadFormState, formData: FormData): 
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const aiReads = useAi && aiImportAvailable();
   let table: Cell[][] | null = null;
-  if (extension) {
-    try {
-      table = await parseStatementFile(buffer, extension);
-    } catch (error) {
-      if (error instanceof StatementFileError) {
-        return { errors: { file: [(await getI18n()).t(error.message, ...error.args)] }, values };
-      }
-      throw error;
+  try {
+    table = await parseStatementFile(buffer, extension);
+  } catch (error) {
+    if (!(error instanceof StatementFileError)) throw error;
+    // The assistant reads the PDF itself, so one whose text the code cannot get at (a scan) can still go to it.
+    if (!(error instanceof UnreadablePdfError && aiReads)) {
+      return { errors: { file: [(await getI18n()).t(error.message, ...error.args)] }, values };
     }
-  } else if (!buffer.subarray(0, 1024).includes("%PDF-")) {
-    return { errors: { file: ["Không đọc được file. Hãy kiểm tra file có đúng định dạng PDF không."] }, values };
   }
 
   let analysis: ImportAnalysis | null = null;
-  if (useAi && aiImportAvailable()) {
+  if (aiReads) {
     if (!(await takeAiQuota(user.id))) {
       return {
         message: "Bạn đã dùng trợ lý AI nhiều lần trong một giờ qua. Hãy thử lại sau, hoặc bỏ chọn trợ lý AI để tự ghép cột.",
@@ -127,13 +115,15 @@ export async function uploadImport(_prev: UploadFormState, formData: FormData): 
     }
     const { categoryOptions } = await getTransactionOptions(user.id);
     try {
-      const extraction = table
-        ? await extractTableRows(user.id, table, categoryOptions, account.currency)
-        : await extractDocumentRows(user.id, buffer, categoryOptions, account.currency);
+      // A PDF goes to the assistant as it is: it reads the layout better than the rebuilt table.
+      const extraction =
+        extension === "xlsx" && table
+          ? await extractTableRows(user.id, table, categoryOptions, account.currency)
+          : await extractDocumentRows(user.id, buffer, categoryOptions, account.currency);
       analysis = { kind: "document", ...extraction };
     } catch (error) {
       if (!(error instanceof AiImportError)) throw error;
-      // A spreadsheet can still be mapped by hand; a PDF cannot be read any other way.
+      // A file whose table was read can still be mapped by hand; a scan cannot be read any other way.
       if (!table) return { errors: { file: [error.message] }, values };
       analysis = { kind: "table", failed: true };
     }
@@ -145,7 +135,7 @@ export async function uploadImport(_prev: UploadFormState, formData: FormData): 
 
   // A file the assistant read is not kept: its rows live in the analysis, so nothing would read it again.
   const extracted = analysis?.kind === "document" ? analysis : null;
-  const tempFileKey = table && extension && !extracted ? await saveImportFile(buffer, extension) : null;
+  const tempFileKey = table && !extracted ? await saveImportFile(buffer, extension) : null;
   const rowCount = extracted ? extracted.rows.length + extracted.errors.length : (table?.length ?? 0);
   const batch = await prisma.importBatch.create({
     data: {
@@ -360,9 +350,9 @@ export async function confirmImport(
   const picker = await rowCategoryPicker(user.id, { expenseCategoryId, incomeCategoryId }, {}, {});
   if ("error" in picker) return { errors: picker.error, ...keep };
 
-  const buffer = await readImportFile(batch.tempFileKey);
-  if (!buffer) return { message: "File tạm đã bị xóa. Hãy hủy lần nhập này và tải file lên lại.", ...keep };
-  const table = await parseStatementFile(buffer, importFileExtension(batch.tempFileKey));
+  const file = await readImportFile(batch.tempFileKey);
+  if (!file) return { message: "File tạm đã bị xóa. Hãy hủy lần nhập này và tải file lên lại.", ...keep };
+  const table = await parseStatementFile(file.buffer, file.extension);
 
   const { rows, errors } = buildRows(table, mapping);
   if (rows.length === 0) {

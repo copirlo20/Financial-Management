@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Financial Management</string>
+    <string name="download_started">Downloading %1$s</string>
+    <string name="download_failed">The file could not be saved. Downloads need Android 10 or newer.</string>
+</resources>

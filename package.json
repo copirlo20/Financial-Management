@@ -6,7 +6,8 @@
     "frontend",
     "backend",
     "database",
-    "shared"
+    "shared",
+    "mobile"
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -19,7 +20,10 @@
     "db:generate": "npm run generate -w database",
     "db:migrate": "npm run migrate -w database",
     "db:deploy": "npm run deploy -w database",
-    "db:seed": "npm run seed -w database"
+    "db:seed": "npm run seed -w database",
+    "mobile:sync": "npm run sync -w mobile",
+    "mobile:open": "npm run open -w mobile",
+    "mobile:run": "npm run run -w mobile --"
   },
   "devDependencies": {
     "eslint": "^9",

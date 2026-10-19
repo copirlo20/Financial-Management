@@ -181,18 +181,18 @@ Lỗi nhập liệu và lỗi nghiệp vụ **vẫn là HTTP `200`**, nằm tron
 |  Method  | Endpoint                            | Quyền | Mô tả                                              | Tham số / Trả về                                                                                             |
 | :------: | ----------------------------------- | :---: | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 |  `GET`   | `/api/imports`                      |  👤   | 50 lần nhập gần nhất và danh sách ví               | → `{ accounts, batches[], aiProvider }`                                                                      |
-|  `GET`   | `/api/imports/template`             |  👤   | Tải file mẫu                                       | Query `format` = `csv` hoặc `xlsx`                                                                           |
+|  `GET`   | `/api/imports/template`             |  👤   | Tải file mẫu Excel (`mau-sao-ke.xlsx`)             | —                                                                                                            |
 |  `GET`   | `/api/imports/:id`                  |  👤   | Một lần nhập, kèm dữ liệu xem lại nếu đang chờ     | → `{ batch, pending }`                                                                                       |
 |  `POST`  | `/api/imports`                      |  👤   | Tải file lên (body là nội dung file)               | Query `accountId`, `useAi`; header `x-file-name` → `redirect:/imports/{id}`                                  |
-|  `POST`  | `/api/imports/:id/confirm`          |  👤   | Xác nhận file đã ghép cột (CSV/Excel không qua AI) | `headerRow`, `dateColumn`, `dateFormat`, `amountMode`, `amountColumn` hoặc `debitColumn` + `creditColumn`, … |
+|  `POST`  | `/api/imports/:id/confirm`          |  👤   | Xác nhận file đã ghép cột (PDF/Excel không qua AI) | `headerRow`, `dateColumn`, `dateFormat`, `amountMode`, `amountColumn` hoặc `debitColumn` + `creditColumn`, … |
 |  `POST`  | `/api/imports/:id/confirm-document` |  👤   | Xác nhận các dòng AI đã đọc (PDF hoặc qua AI)      | `expenseCategoryId`, `incomeCategoryId`, `rowCategory-{dòng}`                                                |
 |  `POST`  | `/api/imports/:id/cancel`           |  👤   | Hủy lần nhập đang chờ                              | —                                                                                                            |
 |  `POST`  | `/api/imports/:id/rollback`         |  👤   | Hoàn tác lần nhập đã ghi                           | —                                                                                                            |
 | `DELETE` | `/api/imports/:id`                  |  👤   | Xóa lần nhập **và mọi giao dịch của nó**           | —                                                                                                            |
 
 - `status`: `PENDING` · `PROCESSED` · `FAILED` · `ROLLED_BACK`. Lần nhập chờ quá **24 giờ** tự bị xóa.
-- Tải lên thất bại (`errors.file`): sai định dạng (chỉ `.csv`, `.xlsx`, `.pdf`), quá 5 MB, file hỏng, quá 10.000 dòng, Excel giải nén quá 25 MB (chống "zip bomb"), PDF khi chưa bật AI.
-- Giới hạn (`message`): tối đa **5** lần nhập chờ xác nhận · **20** lần phân tích AI/giờ · hạn mức token AI trong ngày. AI lỗi với CSV/Excel thì vẫn tạo lần nhập để ghép cột tay.
+- Tải lên thất bại (`errors.file`): sai định dạng (chỉ `.pdf`, `.xlsx`; `.csv` bị từ chối), quá 5 MB, file hỏng, quá 10.000 dòng, Excel giải nén quá 25 MB (chống "zip bomb"), PDF có mật khẩu hoặc quá 200 trang, PDF không có chữ (scan) khi chưa bật AI.
+- Giới hạn (`message`): tối đa **5** lần nhập chờ xác nhận · **20** lần phân tích AI/giờ · hạn mức token AI trong ngày. AI lỗi với Excel hoặc PDF có chữ thì vẫn tạo lần nhập để ghép cột tay.
 - Giao dịch trùng (cùng ví, ngày, số tiền, diễn giải) bị bỏ qua và đếm riêng · hoàn tác bị từ chối nếu có giao dịch đã sửa tay.
 
 ## 🤖 Chatbot AI

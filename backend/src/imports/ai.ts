@@ -139,7 +139,7 @@ function addTransaction(extraction: Extraction, rowNumber: number, transaction: 
   if (chosen && chosen.type === transaction.type) extraction.categories[String(rowNumber)] = chosen.id;
 }
 
-// A PDF has no cells to parse, so the whole file goes to the assistant in one request.
+// A PDF goes to the assistant whole, in one request: it sees the layout, not the table rebuilt from the text.
 export async function extractDocumentRows(
   userId: string,
   pdf: Buffer,

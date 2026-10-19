@@ -50,3 +50,22 @@ if (process.env.NODE_ENV === "development") {
     },
   });
 }
+
+// The development server's live-reload connection (/_next/hmr) can fall into reconnecting every second
+// for good, and then a page change waits at "Rendering…" although its data has arrived. Next.js (16.3 and
+// 16.4) opens a new connection by first closing the current one, but leaves that one's onclose handler in
+// place; the close then counts as a lost connection and schedules yet another reconnect, which closes the
+// next one, and so on. It takes two reconnects at once to start, which a phone does all the time: an app
+// back from the background, a moment without network. Detaching the handlers of a connection the page
+// closes itself is what Next.js does anyway when it closes one after a real disconnect.
+if (process.env.NODE_ENV === "development") {
+  window.WebSocket = class extends window.WebSocket {
+    close(code?: number, reason?: string) {
+      if (this.url.includes("/_next/hmr")) {
+        this.onclose = null;
+        this.onerror = null;
+      }
+      super.close(code, reason);
+    }
+  };
+}

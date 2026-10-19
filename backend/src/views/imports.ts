@@ -5,7 +5,7 @@ import { getTransactionOptions } from "../data/transaction-options";
 import { readAnalysis } from "../imports/analysis";
 import { suggestMapping } from "../imports/mapping";
 import { parseStatementFile, type Cell } from "../imports/parse-file";
-import { importFileExtension, readImportFile } from "../imports/storage";
+import { readImportFile } from "../imports/storage";
 import { idSchema } from "../validations/common";
 
 const HISTORY_LIMIT = 50;
@@ -43,10 +43,10 @@ export type ImportsView = Awaited<ReturnType<typeof importsView>>;
 
 async function loadTable(tempFileKey: string | null): Promise<Cell[][] | null> {
   if (!tempFileKey) return null;
-  const buffer = await readImportFile(tempFileKey);
-  if (!buffer) return null;
+  const file = await readImportFile(tempFileKey);
+  if (!file) return null;
   try {
-    return await parseStatementFile(buffer, importFileExtension(tempFileKey));
+    return await parseStatementFile(file.buffer, file.extension);
   } catch {
     return null;
   }

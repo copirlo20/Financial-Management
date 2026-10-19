@@ -2,12 +2,15 @@ import { createRequire } from "node:module";
 
 // What every suite shares (tests/e2e over HTTP, tests/browser in a real browser): the project's settings,
 // a PASS/FAIL tally, reading pages and their forms, sending forms the way a browser without JavaScript does,
-// cookies, signing up, and the database.
+// cookies, signing up, statement PDFs, and the database.
 // Suites run through tests/run-e2e.mjs, which sets the working directory to the project root.
 
 export const root = process.cwd().split("\\").join("/") + "/";
 process.loadEnvFile(root + ".env");
-const { Client } = createRequire(root + "package.json")("pg");
+const require = createRequire(root + "package.json");
+const { Client } = require("pg");
+const PDFDocument = require("pdfkit");
+const ExcelJS = require("exceljs");
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 // Makes the e-mail addresses of one run unique; the "e2e-" prefix is what the runner cleans up.
@@ -94,6 +97,57 @@ export async function registerUser(email, name) {
   const html = await page("/register");
   const res = await submit("/register", formWith(html, 'name="confirmPassword"'), { name, email, password: PASSWORD, confirmPassword: PASSWORD }, {});
   return readCookies(res, {});
+}
+
+// ---------- Statement files ----------
+// A statement as an Excel file: `rows` on its first sheet, each cell as given (text, number or date).
+export async function statementXlsx(rows) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Sao ke");
+  for (const row of rows) sheet.addRow(row);
+  return Buffer.from(await workbook.xlsx.writeBuffer());
+}
+
+// A bank statement as a PDF, laid out the way banks print one: text placed in columns, no cells. Each row
+// is one line of cells; "\n" in a cell wraps it onto the lines below. `widths` sets the columns (100 pt
+// by default), `right` the right-aligned ones; after `perPage` rows a new page starts, with `header`
+// repeated at its top. `password` locks the file, `extraPages` adds empty pages, `stray` puts texts
+// ({ text, x, y }) anywhere on the first page, even far off it.
+export function statementPdf(rows, { widths = [], right = [], perPage = Infinity, header, password, extraPages = 0, stray = [] } = {}) {
+  const doc = new PDFDocument({ size: "A4", margin: 40, ...(password ? { userPassword: password } : {}) });
+  doc.registerFont("regular", root + "backend/assets/fonts/NotoSans-Regular.ttf");
+  doc.font("regular").fontSize(9);
+  const chunks = [];
+  doc.on("data", (chunk) => chunks.push(chunk));
+  const done = new Promise((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
+
+  for (const { text, x, y } of stray) doc.text(text, x, y, { lineBreak: false });
+  let y = 40;
+  const draw = (row) => {
+    let x = 40;
+    let lines = 1;
+    row.forEach((cell, column) => {
+      const width = widths[column] ?? 100;
+      String(cell ?? "").split("\n").forEach((text, line) => {
+        // ccmp off: with it, pdfkit splits "ị" and "ụ" into a letter and a dot whose text it records wrongly.
+        if (text) doc.text(text, x, y + line * 10, { width: width - 6, align: right.includes(column) ? "right" : "left", lineBreak: false, features: { ccmp: false } });
+        lines = Math.max(lines, line + 1);
+      });
+      x += width;
+    });
+    y += lines * 10 + 8;
+  };
+  rows.forEach((row, index) => {
+    if (index > 0 && index % perPage === 0) {
+      doc.addPage();
+      y = 40;
+      if (header) draw(header);
+    }
+    draw(row);
+  });
+  for (let i = 0; i < extraPages; i++) doc.addPage();
+  doc.end();
+  return done;
 }
 
 // ---------- Database ----------

@@ -27,9 +27,9 @@ E2E_PORT=3300 npm test            # đổi cổng nếu 3101 đang bị chiếm
 | `dashboard`                  |    15    | Tổng hợp thu chi, danh mục, xu hướng, quy đổi                                                                                                                             |
 | `statement`                  |    22    | Sao kê PDF: số dư đầu/cuối kỳ, ghi nợ/có, một ví và tất cả, nhiều trang, từ chối, giới hạn mỗi giờ                                                                        |
 | `language-currency`          |    49    | Việt / Anh, quy đổi tiền tệ, tỷ giá nhập tay của admin                                                                                                                    |
-| `imports`                    |    65    | CSV / Excel, ghép cột, chống trùng, hoàn tác, xóa lần nhập                                                                                                                |
-| `imports-ai`                 |    50    | Đọc sao kê bằng AI (máy chủ giả), PDF, chia phần, xử lý lỗi                                                                                                               |
-| `import-templates`           |    11    | File mẫu CSV và Excel                                                                                                                                                     |
+| `imports`                    |    75    | PDF (dựng lại bảng, nhiều trang, mật khẩu, scan, chữ ngoài trang, sao kê do app xuất) / Excel, CSV bị từ chối, ghép cột, chống trùng, hoàn tác, xóa lần nhập           |
+| `imports-ai`                 |    52    | Đọc sao kê bằng AI (máy chủ giả), PDF, chia phần, xử lý lỗi, PDF có chữ chuyển sang ghép cột tay khi AI lỗi                                                               |
+| `import-templates`           |     6    | File mẫu Excel                                                                                                                                                            |
 | `chat`                       |    35    | Chatbot: công cụ chỉ đọc, cách ly dữ liệu, giới hạn, lỗi                                                                                                                  |
 | `states`                     |    19    | Trạng thái rỗng, lỗi, không tìm thấy                                                                                                                                      |
 | `backend-restart`            |    10    | Backend khởi động lại: form và trang (cả khi trang đang đọc dữ liệu) đợi backend trở lại, phiên không bị mất; backend tắt hẳn hoặc lệnh ghi bị cắt giữa chừng thì form báo lỗi ngay trên form, giữ dữ liệu đã nhập (trừ mật khẩu), không gửi lại lệnh |
@@ -37,7 +37,7 @@ E2E_PORT=3300 npm test            # đổi cổng nếu 3101 đang bị chiếm
 | `mobile`                     |    30    | Trình duyệt giả lập điện thoại: bố cục 320–740 px, thao tác chạm, bàn phím ảo                                                                                             |
 | `imports-ai` (openai)        |    50    | Bộ `imports-ai` chạy lại với bản app dùng OpenAI                                                                                                                          |
 | `chat` (openai)              |    35    | Bộ `chat` chạy lại với bản app dùng OpenAI                                                                                                                                |
-|                              | **694**  |                                                                                                                                                                           |
+|                              | **703**  |                                                                                                                                                                           |
 
 Hai bộ cuối cần **Edge hoặc Chrome**; không có trình duyệt thì chúng tự bỏ qua (đặt `E2E_BROWSER` nếu trình duyệt ở chỗ khác).
 
@@ -66,5 +66,5 @@ Hai loại bộ: `tests/e2e/*.e2e.mjs` gọi qua HTTP như trình duyệt không
 
 Trình duyệt giả lập đôi khi treo khi trang bị đánh dấu "ẩn" (`visibilityState = hidden`); chạy lại, và xem các dòng `at abort:` trong kết quả để biết nó dừng ở đâu.
 
-Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận. Lấy phần dùng chung từ `tests/harness.mjs` (`check`, `report`, `page`, `formWith`, `submit`, `formDefaults`, `registerUser`, `db`, `one`…; bộ trình duyệt thêm `browserCookies`), kết nối database bằng `await db.connect()`, đóng trong `finally` và kết thúc file bằng `report()`.
+Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận. Lấy phần dùng chung từ `tests/harness.mjs` (`check`, `report`, `page`, `formWith`, `submit`, `formDefaults`, `registerUser`, `statementPdf` và `statementXlsx` dựng file sao kê, `db`, `one`…; bộ trình duyệt thêm `browserCookies`), kết nối database bằng `await db.connect()`, đóng trong `finally` và kết thúc file bằng `report()`.
 

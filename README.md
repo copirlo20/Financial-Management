@@ -18,7 +18,7 @@
 ![Claude](https://img.shields.io/badge/Claude-AI-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-![Tests](https://img.shields.io/badge/tests-694%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-703%20passed-22c55e?style=flat-square&logo=checkmarx&logoColor=white)
 ![Languages](https://img.shields.io/badge/giao%20di%E1%BB%87n-Ti%E1%BA%BFng%20Vi%E1%BB%87t%20%7C%20English-7c3aed?style=flat-square)
 ![Currencies](https://img.shields.io/badge/ti%E1%BB%81n%20t%E1%BB%87-10%20lo%E1%BA%A1i-f59e0b?style=flat-square)
 ![Responsive](https://img.shields.io/badge/responsive-desktop%20%7C%20mobile-ec4899?style=flat-square)
@@ -45,7 +45,7 @@
 
 **Financial Management** giúp mỗi người theo dõi tiền của mình ở một nơi: ghi thu chi, chia theo ví và danh mục,
 đặt ngân sách theo tháng, tiết kiệm cho từng mục tiêu và xem biểu đồ dòng tiền. Thay vì gõ tay từng khoản, bạn có thể
-**tải file sao kê ngân hàng (CSV, Excel, PDF)** lên và để **trợ lý AI (Claude hoặc GPT của OpenAI)** đọc, phân loại giúp. Khi cần hỏi nhanh
+**tải file sao kê ngân hàng (PDF, Excel)** lên và để **trợ lý AI (Claude hoặc GPT của OpenAI)** đọc, phân loại giúp. Khi cần hỏi nhanh
 ("tháng này tôi tiêu bao nhiêu?"), **chatbot** trả lời trực tiếp từ dữ liệu của chính bạn.
 
 Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu của mỗi tài khoản được cách ly hoàn toàn, giao diện hoạt
@@ -62,7 +62,7 @@ Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu c
 | 👛  | **Ví / tài khoản**          | Tiền mặt, ngân hàng, ví điện tử, thẻ tín dụng; mỗi ví một loại tiền. Lưu trữ / khôi phục thay vì xóa. Số dư luôn khớp với tổng giao dịch. · [chi tiết](docs/account-flow.md)                                      |
 | 🏷️  | **Danh mục**                | Danh mục mặc định của hệ thống (do admin quản lý) và danh mục riêng, có danh mục con (một cấp), biểu tượng và màu. · [chi tiết](docs/category-flow.md)                                                            |
 | 💸  | **Giao dịch**               | Thu, chi, chuyển khoản giữa hai ví (kể cả khác tiền tệ). Lọc theo ví, danh mục, loại, khoảng ngày; phân trang. · [chi tiết](docs/transaction-flow.md)                                                             |
-| 📥  | **Nhập sao kê**             | Tải CSV / Excel / PDF, xem trước, ghép cột, chống trùng, **hoàn tác** cả lô hoặc **xóa** lần nhập kèm giao dịch. Có file mẫu để tải về. · [chi tiết](docs/import-flow.md)                                         |
+| 📥  | **Nhập sao kê**             | Tải sao kê PDF / Excel, xem trước, ghép cột, chống trùng, **hoàn tác** cả lô hoặc **xóa** lần nhập kèm giao dịch. Có file mẫu để tải về. · [chi tiết](docs/import-flow.md)                                         |
 | 🤖  | **Trợ lý AI đọc sao kê**    | Claude hoặc GPT đọc toàn bộ file (bất kỳ bố cục nào, kể cả PDF), liệt kê giao dịch và gợi ý danh mục; bạn xem lại và sửa từng dòng trước khi ghi. · [chi tiết](docs/import-flow.md)                               |
 | 📊  | **Ngân sách**               | Hạn mức theo tháng, theo danh mục hoặc tổng. Cảnh báo khi dùng từ 80% và khi vượt. Sao chép ngân sách từ tháng trước. · [chi tiết](docs/budget-flow.md)                                                           |
 | 🐷  | **Mục tiêu tiết kiệm**      | Số tiền mục tiêu, hạn chót, gửi / rút từng khoản, tiến độ và gợi ý "cần bao nhiêu mỗi tháng". · [chi tiết](docs/savings-flow.md)                                                                                  |
@@ -174,7 +174,7 @@ Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu c
       <img src="https://img.shields.io/badge/tsx-3178C6?logo=typescript&logoColor=white" alt="tsx" />
       <img src="https://img.shields.io/badge/PDFKit-0.20-EF4444?logo=adobeacrobatreader&logoColor=white" alt="PDFKit" />
     </td>
-    <td>API REST, validate mọi đầu vào bằng Zod, xác thực JWT + refresh token, tỷ giá, báo cáo; <code>papaparse</code> và <code>exceljs</code> đọc CSV / Excel; <code>pdfkit</code> dựng sao kê PDF (font Noto Sans nhúng sẵn).</td>
+    <td>API REST, validate mọi đầu vào bằng Zod, xác thực JWT + refresh token, tỷ giá, báo cáo; <code>pdfjs-dist</code> và <code>exceljs</code> đọc PDF / Excel; <code>pdfkit</code> dựng sao kê PDF (font Noto Sans nhúng sẵn).</td>
   </tr>
   <tr>
     <td><b>🗄️ Database</b></td>
@@ -200,7 +200,7 @@ Dự án được xây theo mô hình **SaaS đa người dùng**: dữ liệu c
       <img src="https://img.shields.io/badge/Edge%20%2F%20Chrome-CDP-0078D7?logo=microsoftedge&logoColor=white" alt="CDP" />
       <img src="https://img.shields.io/badge/ESLint_9-4B32C3?logo=eslint&logoColor=white" alt="ESLint" />
     </td>
-    <td>694 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
+    <td>703 kiểm tra đầu-cuối chạy cả hệ thống; một trình duyệt thật điều khiển qua DevTools Protocol; máy chủ AI giả (Claude và OpenAI) để không tốn tiền khi test.</td>
   </tr>
 </table>
 
@@ -234,6 +234,7 @@ Financial Management/
 ├── ⚙️ backend/    Express API: nghiệp vụ, xác thực, AI, đọc file, sao kê PDF
 ├── 🗄️ database/   Prisma: schema, migration, seed
 ├── 🔗 shared/     Mã dùng chung: bản dịch vi/en, định dạng tiền và ngày, nhãn
+├── 📱 mobile/     App Android (Capacitor) mở trang web
 ├── 🧪 tests/      17 bộ kiểm thử đầu-cuối + máy chủ AI giả
 ├── 🛠️ scripts/    dev.mjs: chạy backend và frontend cùng lúc
 ├── 📚 docs/       Luồng hoạt động từng chức năng, PRD, kiến trúc, API, ảnh
@@ -292,6 +293,7 @@ Tất cả cấu hình nằm trong **một file `.env` ở thư mục gốc** , 
 | `BACKEND_PORT`                          |    ➖    | `4000`                  | Cổng của backend.                                                                                                                                              |
 | `HOST`                                  |    ➖    | `127.0.0.1`             | Địa chỉ backend lắng nghe. Giữ nguyên: backend chỉ cần frontend gọi tới.                                                                                       |
 | `BACKEND_URL`                           |    ➖    | `http://127.0.0.1:4000` | Nơi frontend tìm backend (`npm run dev` tự đặt cho khớp `BACKEND_PORT`).                                                                                       |
+| `MOBILE_SERVER_URL`                     |    ➖    | `http://<IP LAN>:3000`  | Địa chỉ trang web mà app Android mở, ghi vào app khi chạy `npm run mobile:sync`. Bản phát hành cần `https://`.                                                 |
 
 ## 🚀 Cách chạy dự án
 
@@ -342,6 +344,17 @@ npm run build          # build frontend
 npm start              # chạy backend + frontend đã build
 ```
 
+### 5️⃣ App Android (Capacitor)
+
+App là vỏ native mở trang web, nên trang web vẫn phải chạy (`npm run dev` trên máy này, hoặc bản đã triển khai đặt ở `MOBILE_SERVER_URL`). Cần cài **Android Studio** (để có Android SDK) và một máy ảo hoặc điện thoại bật gỡ lỗi USB.
+
+```bash
+npm run mobile:run     # ghi địa chỉ máy chủ (mặc định http://<IP Wi-Fi của máy>:3000), build, cài và mở app
+npm run mobile:open    # hoặc mở mobile/android trong Android Studio rồi bấm Run
+```
+
+Cách hoạt động, tải tệp, nút Back, màu thanh hệ thống, phát hành: [docs/mobile-flow.md](docs/mobile-flow.md).
+
 ### 🧭 Tất cả các lệnh
 
 Chạy ở **thư mục gốc**.
@@ -359,6 +372,9 @@ Chạy ở **thư mục gốc**.
 | `npm run db:deploy`   | Áp các migration đã có (dùng khi triển khai)                           |
 | `npm run db:generate` | Sinh lại client Prisma                                                 |
 | `npm run db:seed`     | Nạp danh mục mặc định                                                  |
+| `npm run mobile:sync` | Ghi địa chỉ máy chủ và cấu hình vào project Android                    |
+| `npm run mobile:open` | Mở project Android trong Android Studio                                |
+| `npm run mobile:run`  | Build bản debug, cài và mở trên máy ảo hoặc điện thoại                 |
 
 ### 🛠️ Gặp lỗi?
 
@@ -377,7 +393,7 @@ Chạy ở **thư mục gốc**.
 
 ## 🧪 Kiểm thử
 
-Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 694 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
+Bộ kiểm thử chạy **cả hệ thống thật** (frontend + backend + PostgreSQL) nên bắt được lỗi ở mọi tầng: **17 bộ, 703 kiểm tra** (gồm hai bộ AI chạy lại với OpenAI). Mỗi bộ tự tạo người dùng `e2e-*@example.com` và xóa đi sau khi chạy.
 
 ```bash
 npm test                          # toàn bộ: build, chạy, tắt
@@ -408,14 +424,15 @@ Chi tiết nằm trong thư mục [docs/](docs/). **Đọc [request-flow](docs/r
 
 | Bạn cần                                                                                             | Đọc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Hiểu một chức năng hoạt động thế nào** (file nào làm gì, luồng từng bước, quy tắc, lỗi, kiểm thử) | Nền tảng: [request](docs/request-flow.md) · [auth](docs/auth-flow.md) · [security](docs/security-flow.md) · [ui](docs/ui-flow.md)<br />Dữ liệu tài chính: [account](docs/account-flow.md) · [category](docs/category-flow.md) · [transaction](docs/transaction-flow.md) · [budget](docs/budget-flow.md) · [savings](docs/savings-flow.md) · [currency](docs/currency-flow.md)<br />Nhập và báo cáo: [import](docs/import-flow.md) · [dashboard](docs/dashboard-flow.md) · [statement](docs/statement-flow.md) · [chat](docs/chat-flow.md)<br />Khác: [settings](docs/settings-flow.md) · [admin](docs/admin-flow.md) |
+| **Hiểu một chức năng hoạt động thế nào** (file nào làm gì, luồng từng bước, quy tắc, lỗi, kiểm thử) | Nền tảng: [request](docs/request-flow.md) · [auth](docs/auth-flow.md) · [security](docs/security-flow.md) · [ui](docs/ui-flow.md)<br />Dữ liệu tài chính: [account](docs/account-flow.md) · [category](docs/category-flow.md) · [transaction](docs/transaction-flow.md) · [budget](docs/budget-flow.md) · [savings](docs/savings-flow.md) · [currency](docs/currency-flow.md)<br />Nhập và báo cáo: [import](docs/import-flow.md) · [dashboard](docs/dashboard-flow.md) · [statement](docs/statement-flow.md) · [chat](docs/chat-flow.md)<br />Khác: [settings](docs/settings-flow.md) · [admin](docs/admin-flow.md) · [mobile](docs/mobile-flow.md) |
 | **Tra cứu**                                                                                         | [Thuật toán và quy trình xử lý](docs/algorithms.md) · [API](docs/api.md) · [Kiểm thử](docs/testing.md) · [Cấu trúc thư mục](docs/STRUCTURE.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **Thiết kế và kế hoạch**                                                                            | [PRD](docs/PRD.md) (mục tiêu, tính năng đã làm / chưa làm) · [ARCHITECTURE](docs/ARCHITECTURE.md) (kiến trúc, schema, phân quyền) · [PLAN](docs/PLAN.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## 🗺️ Lộ trình
 
 - [x] Xác thực, ví, danh mục, giao dịch, chuyển khoản
-- [x] Nhập sao kê CSV / Excel / PDF, trợ lý AI, hoàn tác, xóa lần nhập
+- [x] Nhập sao kê Excel / PDF, trợ lý AI, hoàn tác, xóa lần nhập
+- [x] Đọc sao kê PDF không cần AI (dựng lại bảng từ chữ trong PDF), bỏ nhập CSV
 - [x] Ngân sách và cảnh báo, mục tiêu tiết kiệm
 - [x] Tổng quan và biểu đồ, đa ngôn ngữ, đa tiền tệ với tỷ giá thật
 - [x] Giao diện mới, chế độ tối, chatbot AI, tách frontend / backend / database
@@ -424,7 +441,8 @@ Chi tiết nằm trong thư mục [docs/](docs/). **Đọc [request-flow](docs/r
 - [ ] Giao dịch định kỳ và nhắc hóa đơn
 - [ ] Chia sẻ sổ chung cho gia đình
 - [ ] Kết nối Open API ngân hàng trực tiếp (khi có thỏa thuận với ngân hàng)
-- [ ] Ứng dụng di động
+- [x] App Android (Capacitor, mở trang web)
+- [ ] App iOS (cần máy Mac có Xcode)
 
 ## 🤝 Đóng góp
 

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Financial Management</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f8f6fb;
+        --fg: #241b33;
+        --muted: #6b6378;
+        --primary: #5d2a9b;
+        --on-primary: #fcfbfe;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #130e1c;
+          --fg: #f6f3fa;
+          --muted: #a9a2b6;
+          --primary: #b886f0;
+          --on-primary: #1b0f2e;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      main {
+        width: 100%;
+        max-width: 22rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      button {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        border: 0;
+        border-radius: 0.75rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        font: inherit;
+        font-weight: 600;
+      }
+      small {
+        display: block;
+        margin-top: 1rem;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="title">Không mở được trang</h1>
+      <p id="detail">Máy chủ chưa trả lời hoặc trang đang gặp lỗi. Kiểm tra kết nối mạng rồi thử lại.</p>
+      <button id="retry" type="button">Thử lại</button>
+      <small id="server"></small>
+    </main>
+    <script>
+      const SERVER_URL = "__SERVER_URL__";
+      if (!navigator.language.toLowerCase().startsWith("vi")) {
+        document.documentElement.lang = "en";
+        document.getElementById("title").textContent = "The page could not be opened";
+        document.getElementById("detail").textContent = "The server did not answer or the page ran into an error. Check the network connection and try again.";
+        document.getElementById("retry").textContent = "Try again";
+      }
+      document.getElementById("server").textContent = SERVER_URL;
+      document.getElementById("retry").addEventListener("click", () => location.replace(SERVER_URL));
+    </script>
+  </body>
+</html>

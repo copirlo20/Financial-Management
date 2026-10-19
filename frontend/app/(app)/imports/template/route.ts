@@ -1,10 +1,8 @@
-import type { NextRequest } from "next/server";
 import { backendFetch } from "@/lib/api/client";
 
-// Download of the sample statement file; the backend builds it.
-export async function GET(request: NextRequest) {
-  const format = request.nextUrl.searchParams.get("format") ?? "";
-  const upstream = await backendFetch(`/imports/template?format=${encodeURIComponent(format)}`);
+// Download of the sample statement file (Excel); the backend builds it.
+export async function GET() {
+  const upstream = await backendFetch("/imports/template");
   if (!upstream.ok) return new Response(null, { status: upstream.status });
 
   const headers = new Headers();

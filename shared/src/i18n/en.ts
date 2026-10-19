@@ -281,7 +281,6 @@ export const en: Record<string, string> = {
   "Chưa có file sao kê?": "No statement file yet?",
   "Tải file mẫu, thay các dòng ví dụ bằng giao dịch của bạn rồi tải lên. Số âm là khoản chi, số dương là khoản thu.":
     "Download a template, replace the example rows with your transactions, then upload it. Negative amounts are expenses, positive amounts are income.",
-  "File mẫu CSV": "CSV template",
   "File mẫu Excel": "Excel template",
   "Chờ xác nhận": "Awaiting confirmation",
   "Đã nhập": "Imported",
@@ -289,8 +288,6 @@ export const en: Record<string, string> = {
   "Đã hoàn tác": "Rolled back",
   "Nhập vào tài khoản": "Import into account",
   "File sao kê": "Statement file",
-  "CSV hoặc Excel (.xlsx), tối đa 5 MB và 10.000 dòng. Chưa có gì được ghi cho tới khi bạn xác nhận ở bước sau.":
-    "CSV or Excel (.xlsx), up to 5 MB and 10,000 rows. Nothing is saved until you confirm in the next step.",
   "Đang tải lên...": "Uploading...",
   "Tải lên và xem trước": "Upload and preview",
   "Ngày/Tháng/Năm (31/12/2026)": "Day/Month/Year (31/12/2026)",
@@ -341,8 +338,6 @@ export const en: Record<string, string> = {
   "… và {0} dòng khác.": "… and {0} more rows.",
   "Vui lòng chọn file sao kê.": "Please choose a statement file.",
   "File vượt quá 5 MB.": "The file is larger than 5 MB.",
-  "Chỉ hỗ trợ file .csv và .xlsx (file .xls cũ cần lưu lại thành .xlsx).":
-    "Only .csv and .xlsx files are supported (save old .xls files as .xlsx first).",
   "Bạn đang có {0} lần nhập chưa hoàn tất. Hãy xác nhận hoặc hủy bớt trước khi tải file mới.":
     "You have {0} unfinished imports. Confirm or cancel some before uploading a new file.",
   "Không tìm thấy lần nhập.": "Import not found.",
@@ -361,8 +356,8 @@ export const en: Record<string, string> = {
   "Số tiền không hợp lệ.": "Invalid amount.",
   "Thiếu số tiền hoặc số tiền bằng 0.": "The amount is missing or zero.",
   "Dòng có cả số tiền chi và số tiền thu.": "The row has both a money-out and a money-in amount.",
-  "Không đọc được file. Hãy kiểm tra file có đúng định dạng CSV hoặc Excel (.xlsx) không.":
-    "The file could not be read. Check that it is a valid CSV or Excel (.xlsx) file.",
+  "Không đọc được file. Hãy kiểm tra file có đúng định dạng Excel (.xlsx) không.":
+    "The file could not be read. Check that it is a valid Excel (.xlsx) file.",
   "File không có dữ liệu.": "The file has no data.",
   "File có {0} dòng, vượt giới hạn {1} dòng mỗi lần nhập.": "The file has {0} rows, over the limit of {1} rows per import.",
   "Vui lòng chọn cột.": "Please choose a column.",
@@ -503,13 +498,19 @@ export const en: Record<string, string> = {
   "Xóa ngân sách này?": "Delete this budget?",
   "Bộ lọc": "Filters",
   "Đang tải...": "Loading...",
-  "CSV, Excel (.xlsx) hoặc PDF, tối đa 5 MB và 10.000 dòng. Chưa có gì được ghi cho tới khi bạn xác nhận ở bước sau.":
-    "CSV, Excel (.xlsx) or PDF, up to 5 MB and 10,000 rows. Nothing is saved until you confirm in the next step.",
-  "Chỉ hỗ trợ file .csv, .xlsx và .pdf (file .xls cũ cần lưu lại thành .xlsx).":
-    "Only .csv, .xlsx and .pdf files are supported (save an old .xls file as .xlsx first).",
+  "Sao kê PDF tải từ ngân hàng hoặc file Excel (.xlsx), tối đa 5 MB và 10.000 dòng. Chưa có gì được ghi cho tới khi bạn xác nhận ở bước sau.":
+    "A PDF statement downloaded from your bank or an Excel file (.xlsx), up to 5 MB and 10,000 rows. Nothing is saved until you confirm in the next step.",
+  "Chỉ hỗ trợ file .pdf và .xlsx (file .xls cũ cần lưu lại thành .xlsx).":
+    "Only .pdf and .xlsx files are supported (save an old .xls file as .xlsx first).",
+  "File PDF có mật khẩu. Hãy tải sao kê không đặt mật khẩu, hoặc mở file rồi in lại thành PDF không có mật khẩu.":
+    "The PDF is password-protected. Download the statement without a password, or open it and print it again as a PDF without one.",
+  "File PDF có hơn {0} trang. Hãy tải sao kê theo khoảng thời gian ngắn hơn.":
+    "The PDF has more than {0} pages. Download the statement for a shorter period.",
+  "File PDF không có chữ để đọc (có thể là bản scan hoặc ảnh chụp). Hãy tải sao kê PDF gốc từ ngân hàng.":
+    "The PDF has no text to read (it may be a scan or a photo). Download the original PDF statement from your bank.",
   "Dùng trợ lý AI ({0}) để phân tích file": "Use the AI assistant ({0}) to analyse the file",
-  "Trợ lý đọc toàn bộ file, liệt kê các giao dịch và gợi ý danh mục cho từng giao dịch, và là cách duy nhất để đọc file PDF. Nội dung file được gửi tới {0} để phân tích; bỏ chọn nếu bạn muốn tự ghép cột.":
-    "The assistant reads the whole file, lists its transactions and suggests a category for each, and is the only way to read a PDF. The file's contents are sent to {0} for analysis; untick this to map the columns yourself.",
+  "Trợ lý đọc toàn bộ file, liệt kê các giao dịch và gợi ý danh mục cho từng giao dịch, và đọc được cả PDF scan. Nội dung file được gửi tới {0} để phân tích; bỏ chọn nếu bạn muốn tự ghép cột.":
+    "The assistant reads the whole file, lists its transactions and suggests a category for each, and can read scanned PDFs too. The file's contents are sent to {0} for analysis; untick this to map the columns yourself.",
   "Đang tải lên và phân tích...": "Uploading and analysing...",
   "Giao dịch trợ lý AI đọc được": "Transactions the AI assistant read",
   "Trợ lý AI đọc được {0} giao dịch từ file. Hãy đối chiếu ngày và số tiền với sao kê trước khi xác nhận, vì AI có thể đọc nhầm.":
@@ -524,10 +525,6 @@ export const en: Record<string, string> = {
   "Theo danh mục mặc định": "Use the default category",
   "Đang hiện {0} trong {1} giao dịch. Các giao dịch còn lại dùng danh mục trợ lý AI đề xuất, hoặc danh mục mặc định nếu không có đề xuất.":
     "Showing {0} of {1} transactions. The rest use the category the AI assistant suggested, or the default category when it suggested none.",
-  "File PDF cần trợ lý AI, nhưng trợ lý AI chưa được cấu hình trên máy chủ.":
-    "A PDF needs the AI assistant, but the AI assistant is not set up on this server.",
-  "File PDF chỉ đọc được bằng trợ lý AI. Hãy bật trợ lý AI rồi tải lại.":
-    "A PDF can only be read by the AI assistant. Turn the AI assistant on and upload again.",
   "Không đọc được file. Hãy kiểm tra file có đúng định dạng PDF không.":
     "The file could not be read. Check that it really is a PDF.",
   "Bạn đã dùng trợ lý AI nhiều lần trong một giờ qua. Hãy thử lại sau, hoặc bỏ chọn trợ lý AI để tự ghép cột.":
@@ -634,8 +631,8 @@ export const en: Record<string, string> = {
     "The current password is not correct.",
   "Đã đổi mật khẩu. Các thiết bị khác đã được đăng xuất.":
     "Password changed. Your other devices have been signed out.",
-  "File Excel quá lớn khi giải nén. Hãy tách thành nhiều file nhỏ hơn hoặc lưu lại dưới dạng CSV.":
-    "This Excel file is too large once unpacked. Split it into smaller files or save it as CSV.",
+  "File Excel quá lớn khi giải nén. Hãy tách thành nhiều file nhỏ hơn.":
+    "This Excel file is too large once unpacked. Split it into smaller files.",
   "Vui lòng nhập mật khẩu mới.":
     "Please enter a new password.",
   "Vui lòng nhập mật khẩu hiện tại.":

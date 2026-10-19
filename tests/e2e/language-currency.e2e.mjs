@@ -1,4 +1,4 @@
-import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one } from "../harness.mjs";
+import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -68,17 +68,17 @@ try {
   await submit("/categories", formWith(html, 'name="color"'), { name: "Coffee", type: "EXPENSE", icon: "coffee", color: "#aa5500", parentId: food }, jarA);
   const customCategory = (await one(`select id from categories where "userId" = $1`, [aId])).id;
   html = await page("/imports", jarA);
-  const csv = Buffer.from("Date,Description,Amount\n2026-10-01,Card payment,-45000\nnot a date,Junk,5\n", "utf8");
+  const statement = await statementPdf([["Date", "Description", "Amount"], ["2026-10-01", "Card payment", "-45000"], ["2026-13-01", "Junk", "5"]], { right: [2] });
   const up = new FormData();
   for (const [tag] of formWith(html, 'name="file"').matchAll(/<input[^>]*type="hidden"[^>]*>/g)) up.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  up.append("accountId", wallet); up.append("file", new Blob([csv]), "statement.csv");
+  up.append("accountId", wallet); up.append("file", new Blob([statement]), "statement.pdf");
   res = await fetch(BASE + "/imports", { method: "POST", body: up, redirect: "manual", headers: { cookie: cookieHeader(jarA), origin: BASE } });
   const pendingImport = res.headers.get("location");
   const pendingHtml = await page(pendingImport, jarA);
   // A second upload that gets confirmed, to cover the result page too.
   const up2 = new FormData();
   for (const [tag] of formWith(html, 'name="file"').matchAll(/<input[^>]*type="hidden"[^>]*>/g)) up2.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
-  up2.append("accountId", wallet); up2.append("file", new Blob([csv]), "statement-2.csv");
+  up2.append("accountId", wallet); up2.append("file", new Blob([statement]), "statement-2.pdf");
   res = await fetch(BASE + "/imports", { method: "POST", body: up2, redirect: "manual", headers: { cookie: cookieHeader(jarA), origin: BASE } });
   const doneImport = res.headers.get("location");
   html = await page(doneImport, jarA);

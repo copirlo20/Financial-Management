@@ -6,7 +6,8 @@ import type { StatementExtension } from "./parse-file";
 // Uploaded statements wait here between upload and confirm/cancel. Local disk only: a deployment with
 // several instances or an ephemeral filesystem needs object storage behind these three functions instead.
 const DIRECTORY = path.resolve(import.meta.dirname, "../../storage/imports");
-const KEY_PATTERN = /^[0-9a-f-]{36}\.(csv|xlsx)$/;
+// .csv: files of imports left pending when CSV was still accepted. They can no longer be read, only removed.
+const KEY_PATTERN = /^[0-9a-f-]{36}\.(csv|xlsx|pdf)$/;
 
 function filePath(key: string): string {
   // Keys come back from the database; the pattern check keeps them from ever escaping DIRECTORY.
@@ -21,13 +22,12 @@ export async function saveImportFile(buffer: Buffer, extension: StatementExtensi
   return key;
 }
 
-export function importFileExtension(key: string): StatementExtension {
-  return key.endsWith(".xlsx") ? "xlsx" : "csv";
-}
-
-export async function readImportFile(key: string): Promise<Buffer | null> {
+// The file and its type; null when it is gone or of a type no longer read.
+export async function readImportFile(key: string): Promise<{ buffer: Buffer; extension: StatementExtension } | null> {
+  const extension = key.endsWith(".xlsx") ? "xlsx" : key.endsWith(".pdf") ? "pdf" : null;
+  if (!extension) return null;
   try {
-    return await readFile(filePath(key));
+    return { buffer: await readFile(filePath(key)), extension };
   } catch {
     return null;
   }

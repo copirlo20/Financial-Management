@@ -71,18 +71,11 @@ export default async function ImportsPage() {
             <div className="mt-4 border-t pt-4 text-sm">
               <p className="font-medium">{t("Chưa có file sao kê?")}</p>
               <p className="mt-1 text-muted-foreground">{t("Tải file mẫu, thay các dòng ví dụ bằng giao dịch của bạn rồi tải lên. Số âm là khoản chi, số dương là khoản thu.")}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <a
-                  href="/imports/template?format=csv"
-                  download
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                >{t("File mẫu CSV")}</a>
-                <a
-                  href="/imports/template?format=xlsx"
-                  download
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                >{t("File mẫu Excel")}</a>
-              </div>
+              <a
+                href="/imports/template"
+                download
+                className={buttonVariants({ variant: "outline", size: "sm", className: "mt-2" })}
+              >{t("File mẫu Excel")}</a>
             </div>
           </CardContent>
         </Card>

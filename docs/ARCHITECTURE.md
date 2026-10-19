@@ -21,7 +21,7 @@ flowchart LR
 | Thành phần | Công nghệ | Vai trò |
 | --- | --- | --- |
 | **Frontend** | Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui, Recharts | Giao diện. Server Component dựng trang, Server Action chuyển form sang backend. **Không có nghiệp vụ, không chạm database, không giữ bí mật.** |
-| **Backend** | Express 5, Zod, `jose` (JWT), scrypt, `exceljs`, `papaparse`, `pdfkit`, SDK của Anthropic và OpenAI | Toàn bộ nghiệp vụ, xác thực, kiểm tra quyền, validate, đọc file, gọi AI, dựng PDF. Mặc định chỉ nghe ở `127.0.0.1`. |
+| **Backend** | Express 5, Zod, `jose` (JWT), scrypt, `exceljs`, `pdfjs-dist` (đọc PDF), `pdfkit` (dựng PDF), SDK của Anthropic và OpenAI | Toàn bộ nghiệp vụ, xác thực, kiểm tra quyền, validate, đọc file, gọi AI, dựng PDF. Mặc định chỉ nghe ở `127.0.0.1`. |
 | **Database** | PostgreSQL, Prisma 7 (`@prisma/adapter-pg`) | Lưu dữ liệu. Số tiền `Decimal`. Ràng buộc Prisma không biểu diễn được (CHECK, chỉ mục từng phần) viết trong migration SQL. |
 | **Shared** | TypeScript thuần | Mã dùng chung hai phía: bản dịch, định dạng tiền và ngày, nhãn, hằng số, kiểu dữ liệu đường truyền. |
 
@@ -154,7 +154,7 @@ Chỉ mục: `(userId, date)`, `accountId`, `categoryId`, `importBatchId`, `tran
 ### Rủi ro
 
 - Số liệu lưu sẵn sẽ lệch nếu có đường ghi nào quên cập nhật trong cùng transaction; mọi đường ghi hiện tại (giao dịch, chuyển khoản, nhập sao kê, hoàn tác, xóa, tiết kiệm) đều đã theo quy tắc và được kiểm thử, nhưng đường ghi **mới** phải theo đúng quy tắc đó.
-- Nhập CSV/Excel từ nhiều ngân hàng có định dạng khác nhau; chống trùng bằng băm không hoàn hảo (hai giao dịch thật sự trùng cả ngày, số tiền, diễn giải sẽ được giữ hai nhờ số thứ tự, nhưng nhập lại từng phần của một file thì có thể bỏ nhầm).
+- Nhập PDF/Excel từ nhiều ngân hàng có bố cục khác nhau (PDF chỉ đọc được bằng code khi có chữ và bảng xếp theo cột; PDF scan cần AI); chống trùng bằng băm không hoàn hảo (hai giao dịch thật sự trùng cả ngày, số tiền, diễn giải sẽ được giữ hai nhờ số thứ tự, nhưng nhập lại từng phần của một file thì có thể bỏ nhầm).
 - Nguồn tỷ giá miễn phí cập nhật một lần mỗi ngày; nếu nguồn đổi định dạng hay ngừng, app dùng tỷ giá đã lưu và admin có thể nhập tay.
 
 ---

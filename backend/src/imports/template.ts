@@ -10,23 +10,6 @@ const SAMPLE_ROWS: { date: [year: number, month: number, day: number]; descripti
   { date: [2026, 10, 7], description: "Ví dụ: Tiền điện", amount: -1250000.5 },
 ];
 
-const pad = (value: number) => String(value).padStart(2, "0");
-
-function csvField(value: string): string {
-  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
-
-export function buildCsvTemplate(): Buffer {
-  const lines = [
-    HEADERS.join(","),
-    ...SAMPLE_ROWS.map(({ date: [year, month, day], description, amount }) =>
-      [`${pad(day)}/${pad(month)}/${year}`, csvField(description), String(amount)].join(","),
-    ),
-  ];
-  // The BOM makes Excel open the file as UTF-8 instead of mangling Vietnamese characters.
-  return Buffer.from(`﻿${lines.join("\r\n")}\r\n`, "utf8");
-}
-
 export async function buildXlsxTemplate(): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Sao kê");

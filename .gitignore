@@ -29,5 +29,8 @@ npm-debug.log*
 # uploaded bank statements awaiting import (sensitive)
 /backend/storage
 
+# the mobile app's fallback page, written by mobile/capacitor.config.ts on every sync
+/mobile/www
+
 # .claude/skills only links to .agents/skills (re-created by the Prisma tooling), so it is not stored twice
 /.claude/skills/

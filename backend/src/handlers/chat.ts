@@ -39,7 +39,7 @@ function systemPrompt(user: CurrentUser, language: string, t: Translate): string
     [t("Giao dịch"), "add, edit, delete and filter income/expense entries; transfer between accounts"],
     [t("Ngân sách"), "monthly spending limits per category or overall, with warnings near and over the limit"],
     [t("Tiết kiệm"), "savings goals and contributions towards them"],
-    [t("Nhập sao kê"), "upload a bank statement (CSV, Excel, PDF) to add many transactions at once; an import can be undone or deleted"],
+    [t("Nhập sao kê"), "upload a bank statement (PDF or Excel) to add many transactions at once; an import can be undone or deleted"],
     [t("Tài khoản"), "accounts and wallets with their balances"],
     [t("Danh mục"), "income and expense categories, including the user's own"],
     [t("Cài đặt"), "profile, default currency, exchange rates"],

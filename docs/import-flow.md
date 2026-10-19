@@ -1,7 +1,8 @@
 # Luồng nhập sao kê
 
-Đưa nhiều giao dịch vào một lần từ file sao kê ngân hàng (**CSV, Excel `.xlsx`, PDF**), xem lại, xác nhận, và có thể **hoàn tác** hoặc **xóa**.
-Có hai đường: **không dùng AI** (app tự đoán cột, bạn xác nhận cách ghép) và **dùng AI** (Claude hoặc GPT đọc cả file).
+Đưa nhiều giao dịch vào một lần từ file sao kê ngân hàng (**PDF** tải từ ngân hàng hoặc **Excel `.xlsx`**), xem lại, xác nhận, và có thể **hoàn tác** hoặc **xóa**.
+Có hai đường: **không dùng AI** (app tự đọc bảng trong file, đoán cột, bạn xác nhận cách ghép) và **dùng AI** (Claude hoặc GPT đọc cả file).
+File CSV không còn được nhận (từ mục 29 của [PLAN](PLAN.md)).
 Đường đi chung của yêu cầu xem [request-flow.md](request-flow.md).
 
 ## Nguyên tắc thiết kế
@@ -21,7 +22,7 @@ Có hai đường: **không dùng AI** (app tự đoán cột, bạn xác nhận
 | Route tải file mẫu | [frontend/app/(app)/imports/template/route.ts](../frontend/app/(app)/imports/template/route.ts) |
 | Handler (ghi) | [backend/src/handlers/imports.ts](../backend/src/handlers/imports.ts) |
 | View (đọc) | [backend/src/views/imports.ts](../backend/src/views/imports.ts) |
-| Đọc file | [imports/parse-file.ts](../backend/src/imports/parse-file.ts), [xlsx-guard.ts](../backend/src/imports/xlsx-guard.ts), [storage.ts](../backend/src/imports/storage.ts), [template.ts](../backend/src/imports/template.ts) |
+| Đọc file | [imports/parse-file.ts](../backend/src/imports/parse-file.ts), [parse-pdf.ts](../backend/src/imports/parse-pdf.ts) (`pdfjs-dist`), [xlsx-guard.ts](../backend/src/imports/xlsx-guard.ts), [storage.ts](../backend/src/imports/storage.ts), [template.ts](../backend/src/imports/template.ts) (file mẫu Excel) |
 | Ghép cột (không AI) | [imports/mapping.ts](../backend/src/imports/mapping.ts) |
 | AI | [imports/ai.ts](../backend/src/imports/ai.ts), [imports/analysis.ts](../backend/src/imports/analysis.ts), [backend/src/ai/](../backend/src/ai/) |
 | Dọn dẹp | [backend/src/maintenance.ts](../backend/src/maintenance.ts) |
@@ -32,12 +33,13 @@ Có hai đường: **không dùng AI** (app tự đoán cột, bạn xác nhận
 flowchart TD
     U[1. Tải file lên<br/>POST /api/imports] --> V{Kiểm tra file, ví,<br/>số lần nhập đang chờ}
     V -- sai --> E1[Lỗi ở form]
-    V -- đúng --> P[Đọc file thành bảng ô]
+    V -- đúng --> P[Đọc file thành bảng ô<br/>PDF: dựng lại bảng từ chữ]
+    P -- không đọc được, không AI --> E1
     P --> AI{Bật trợ lý AI?}
     AI -- không --> T[Lưu file tạm]
     AI -- có --> R[AI đọc toàn bộ file<br/>trả danh sách giao dịch]
-    R -- lỗi, CSV hoặc Excel --> T
-    R -- lỗi, PDF --> E1
+    R -- lỗi, đã có bảng --> T
+    R -- lỗi, PDF scan --> E1
     R -- được --> X[Lưu kết quả AI,<br/>không giữ file]
     T --> B[(ImportBatch PENDING)]
     X --> B
@@ -63,14 +65,14 @@ Kiểm tra theo thứ tự, mỗi bước sai là trả lỗi ngay ở form:
 | Ví | Là UUID, thuộc người dùng, **chưa lưu trữ** |
 | Có file | "Vui lòng chọn file sao kê." |
 | Kích thước | Tối đa **5 MB** |
-| Định dạng | `.csv`, `.xlsx`, `.pdf` (`.pdf` chỉ khi có AI); `.xls` cũ phải lưu lại thành `.xlsx` |
-| PDF | Cần AI và phải bật ô AI; phần đầu file phải có dấu hiệu `%PDF-` |
+| Định dạng | `.pdf`, `.xlsx`; `.xls` cũ phải lưu lại thành `.xlsx`; `.csv` bị từ chối |
+| PDF | Phần đầu file có dấu hiệu `%PDF-`, không đặt mật khẩu, tối đa **200 trang**; chữ đặt ngoài khung trang bị bỏ qua |
 | Số lần nhập đang chờ | Tối đa **5** `PENDING` mỗi người |
-| Đọc được | CSV/Excel đọc thành bảng; hỏng thì báo lỗi |
+| Đọc được | Đọc thành bảng; hỏng thì báo lỗi. PDF không có chữ (scan) hoặc pdf.js không mở được thì báo lỗi, **trừ khi bật AI**: khi đó file đi thẳng tới AI |
 
-**Đọc CSV/Excel thành bảng ô** ([parse-file.ts](../backend/src/imports/parse-file.ts)):
+**Đọc file thành bảng ô** ([parse-file.ts](../backend/src/imports/parse-file.ts)):
 
-- **CSV**: giải mã UTF-8, nếu không hợp lệ thì **Windows-1258** (nhiều ngân hàng Việt Nam xuất kiểu này), nhận cả UTF-16LE có BOM; đọc bằng `papaparse`.
+- **PDF** ([parse-pdf.ts](../backend/src/imports/parse-pdf.ts)): `pdfjs-dist` lấy các mẩu chữ kèm tọa độ; app gom thành dòng theo đường chân chữ, tìm các cột từ những dòng có ngày và số tiền, nối dòng diễn giải bị xuống dòng vào giao dịch phía trên, và bỏ các dòng sau bảng không thể là giao dịch (tên cột lặp ở mỗi trang, dòng tổng, ghi chú). Chi tiết: [algorithms.md mục 8.1](algorithms.md#81-đọc-file-thành-bảng-ô). Chỉ đọc được PDF **có chữ** (sao kê tải từ ngân hàng); bản scan hay ảnh chụp thì không.
 - **Excel**: lấy **sheet đầu tiên**. Trước khi mở, [xlsx-guard.ts](../backend/src/imports/xlsx-guard.ts) giải nén thử từng phần với trần **25 MB** và **1.000** mục để chặn "zip bomb": file nén nhỏ xíu nhưng bung ra hàng GB. Kích thước tự khai trong file không được tin.
 - Chuẩn hóa ô: ngày, số, chuỗi; công thức lấy kết quả; chuỗi nhiều định dạng lấy văn bản thuần.
 - Chỉ giữ **tối đa 50 cột**, bỏ dòng trống hoàn toàn. Tối đa **10.000 dòng**; không có dòng nào thì "File không có dữ liệu."
@@ -80,13 +82,13 @@ Sau đó rẽ nhánh (mục 1a hoặc 1b) rồi tạo `ImportBatch` ở trạng 
 
 ### 1a. Không dùng AI
 
-File được lưu tạm ở `backend/storage/imports/<uuid>.csv|xlsx` (tên là UUID, kiểm bằng biểu thức chính quy để không thể thoát khỏi thư mục), `tempFileKey` trỏ tới nó. Hiện chỉ có bảng ô, **chưa có giao dịch nào**.
+File được lưu tạm ở `backend/storage/imports/<uuid>.pdf|xlsx` (tên là UUID, kiểm bằng biểu thức chính quy để không thể thoát khỏi thư mục), `tempFileKey` trỏ tới nó. Hiện chỉ có bảng ô, **chưa có giao dịch nào**. File `.csv` của lần nhập còn dở từ trước vẫn được dọn, nhưng không đọc lại được nữa (trang báo file tạm không còn).
 
 ### 1b. Dùng AI (xem [mục AI](#trợ-lý-ai-phân-tích-file))
 
 Kết quả AI lưu vào `ImportBatch.aiAnalysis`; **file gốc không được giữ**. Nếu AI lỗi:
-- **CSV/Excel**: vẫn tạo lần nhập, chuyển sang ghép cột tay (có thông báo "Trợ lý AI không đọc được file này, nên bạn cần tự ghép cột bên dưới.").
-- **PDF**: báo lỗi và **không** tạo lần nhập (không còn cách nào khác để đọc PDF).
+- **Excel, PDF có chữ**: vẫn tạo lần nhập, chuyển sang ghép cột tay trên bảng app đã đọc (có thông báo "Trợ lý AI không đọc được file này, nên bạn cần tự ghép cột bên dưới.").
+- **PDF scan** (app không đọc được chữ): báo lỗi và **không** tạo lần nhập (không còn cách nào khác để đọc nó).
 
 ## 2. Trang xem lại (`GET /api/imports/:id`)
 
@@ -189,9 +191,9 @@ Hoàn tác và xóa khóa dòng (`FOR UPDATE`) lô và các giao dịch của n�
 
 Khi bật, mô hình AI đọc **toàn bộ file** và trả danh sách giao dịch; không còn bước ghép cột. Nhà cung cấp (Claude hoặc OpenAI) và cấu hình xem [README](../README.md#cau-hinh); lớp dùng chung ở [backend/src/ai/](../backend/src/ai/).
 
-- **CSV/Excel**: mọi dòng được gửi đi, chia thành các phần **150 dòng** (4 phần chạy song song). Từ phần thứ hai, **15 dòng đầu** của file được gửi kèm để AI luôn thấy tiêu đề cột. Mỗi giao dịch AI trả về có **số dòng gốc**; dòng ngoài phần đang đọc hoặc bị lặp bị bỏ. **Một phần lỗi thì cả file coi như lỗi**, không nhập nửa chừng (nếu không sẽ mất giao dịch trong im lặng).
-- **PDF**: cả file gửi trong **một** lệnh gọi; dài quá giới hạn câu trả lời thì từ chối kèm gợi ý tách file.
-- CSV/Excel trên **3.000 dòng** không gửi cho AI (quá nhiều lệnh gọi) mà chuyển sang ghép cột tay.
+- **Excel**: mọi dòng được gửi đi, chia thành các phần **150 dòng** (4 phần chạy song song). Từ phần thứ hai, **15 dòng đầu** của file được gửi kèm để AI luôn thấy tiêu đề cột. Mỗi giao dịch AI trả về có **số dòng gốc**; dòng ngoài phần đang đọc hoặc bị lặp bị bỏ. **Một phần lỗi thì cả file coi như lỗi**, không nhập nửa chừng (nếu không sẽ mất giao dịch trong im lặng).
+- **PDF**: nguyên file gửi trong **một** lệnh gọi (AI thấy cả bố cục, không phải bảng app dựng lại); dài quá giới hạn câu trả lời thì từ chối kèm gợi ý tách file, hoặc chuyển sang ghép cột tay nếu app đã đọc được bảng.
+- Excel trên **3.000 dòng** không gửi cho AI (quá nhiều lệnh gọi) mà chuyển sang ghép cột tay.
 - **Kết quả**: ngày, loại thu/chi, số tiền, diễn giải và gợi ý danh mục cho từng giao dịch, theo một JSON schema cố định.
 - **Server kiểm tra lại từng giá trị**: ngày có thật không, số tiền hợp lệ không; dòng hỏng vào danh sách lỗi; danh mục sai loại hoặc ngoài danh sách bị bỏ.
 - **Nội dung file là dữ liệu không tin cậy**: prompt dặn AI không coi nội dung file là chỉ dẫn, và câu trả lời bị ràng buộc bằng schema.
@@ -218,7 +220,11 @@ Chạy sau khi backend khởi động rồi mỗi giờ (`MAINTENANCE_INTERVAL_M
 | Tình huống | Kết quả |
 | --- | --- |
 | File quá 5 MB, sai định dạng, hỏng, quá 10.000 dòng | Lỗi ở trường file |
-| Excel bung ra quá 25 MB | "File Excel quá lớn khi giải nén. Hãy tách thành nhiều file nhỏ hơn hoặc lưu lại dưới dạng CSV." |
+| Excel bung ra quá 25 MB | "File Excel quá lớn khi giải nén. Hãy tách thành nhiều file nhỏ hơn." |
+| PDF có mật khẩu | "File PDF có mật khẩu. Hãy tải sao kê không đặt mật khẩu…" |
+| PDF quá 200 trang | "File PDF có hơn 200 trang. Hãy tải sao kê theo khoảng thời gian ngắn hơn." |
+| PDF scan, không bật AI | "File PDF không có chữ để đọc (có thể là bản scan hoặc ảnh chụp)…" |
+| File `.csv` | "Chỉ hỗ trợ file .pdf và .xlsx…" |
 | Đang có 5 lần nhập chờ | "Bạn đang có N lần nhập chưa hoàn tất. Hãy xác nhận hoặc hủy bớt…" |
 | Vượt 20 lần AI mỗi giờ, hết hạn mức token | Lỗi chung, kèm gợi ý bỏ chọn AI để ghép cột tay |
 | Xác nhận lần nhập không còn chờ (bấm hai lần, đã hủy) | "Lần nhập này không còn chờ xác nhận." |
@@ -228,6 +234,6 @@ Chạy sau khi backend khởi động rồi mỗi giờ (`MAINTENANCE_INTERVAL_M
 
 | Bộ | Nội dung |
 | --- | --- |
-| `imports` (65) | CSV/Excel, ghép cột, chống trùng, hoàn tác, xóa lần nhập, "zip bomb", dọn lần nhập bỏ dở |
-| `imports-ai` (50, chạy cả với Claude lẫn OpenAI) | AI đọc CSV/Excel/PDF qua máy chủ giả, chia phần, lỗi, hạn mức |
-| `import-templates` (11) | File mẫu CSV và Excel |
+| `imports` (75) | PDF (cột nợ/có, một cột có dấu, diễn giải xuống dòng, nhiều trang, mật khẩu, scan, chữ đặt ngoài trang, sao kê do chính app xuất), Excel, CSV bị từ chối, ghép cột, chống trùng, hoàn tác, xóa lần nhập, "zip bomb", dọn lần nhập bỏ dở |
+| `imports-ai` (52, chạy cả với Claude lẫn OpenAI) | AI đọc Excel/PDF qua máy chủ giả, chia phần, lỗi, PDF có chữ chuyển sang ghép cột tay khi AI lỗi, hạn mức |
+| `import-templates` (6) | File mẫu Excel |

@@ -28,7 +28,7 @@ Xây dựng một web app quản lý tài chính cá nhân cho phép người d�
 | 3 | **Ghi chi tiêu & thu nhập** | |
 | | Nhập giao dịch thủ công (số tiền, danh mục, ngày, ghi chú, ví) | ✅ [transaction-flow](transaction-flow.md). Thêm: chuyển khoản giữa hai ví (kể cả khác tiền tệ) |
 | | Phân loại theo danh mục, danh mục tùy chỉnh | ✅ [category-flow](category-flow.md). Thêm: danh mục con (một cấp) |
-| | Import giao dịch từ sao kê CSV/Excel | ✅ [import-flow](import-flow.md): ghép cột (app gợi ý theo tên cột), chống trùng, hoàn tác |
+| | Import giao dịch từ sao kê PDF/Excel | ✅ [import-flow](import-flow.md): app dựng lại bảng từ PDF, ghép cột (app gợi ý theo tên cột), chống trùng, hoàn tác. CSV đã bỏ |
 | 4 | **Lập ngân sách** | |
 | | Hạn mức theo tháng, theo danh mục (và tổng) | ✅ [budget-flow](budget-flow.md) |
 | | Cảnh báo khi gần hoặc vượt ngân sách | ✅ Từ 80% và khi vượt 100%; cảnh báo hiện trong app |
@@ -48,10 +48,10 @@ Xây dựng một web app quản lý tài chính cá nhân cho phép người d�
 
 | Tính năng | Mô tả |
 | --- | --- |
-| **Trợ lý AI đọc sao kê** | Claude hoặc GPT đọc toàn bộ file CSV/Excel (mọi bố cục) và **PDF**, liệt kê giao dịch và **gợi ý danh mục**; người dùng đối chiếu trước khi ghi ([import-flow](import-flow.md)) |
+| **Trợ lý AI đọc sao kê** | Claude hoặc GPT đọc toàn bộ file Excel (mọi bố cục) và **PDF**, kể cả PDF scan, liệt kê giao dịch và **gợi ý danh mục**; người dùng đối chiếu trước khi ghi ([import-flow](import-flow.md)) |
 | **Chatbot AI** | Hỏi đáp về chi tiêu, ngân sách, số dư, cách dùng app; chỉ đọc dữ liệu của chính người dùng ([chat-flow](chat-flow.md)) |
 | **Xuất sao kê PDF** | Theo khoảng thời gian tùy chọn, một ví hoặc tất cả, bố cục như sao kê ngân hàng ([statement-flow](statement-flow.md)) |
-| **Quản lý lần nhập** | Hoàn tác cả lô, xóa lần nhập kèm giao dịch, file mẫu CSV/Excel |
+| **Quản lý lần nhập** | Hoàn tác cả lô, xóa lần nhập kèm giao dịch, file mẫu Excel |
 | **Giao diện sáng / tối** | Theo thiết bị hoặc chọn tay; modal xác nhận thao tác xóa; lớp phủ chờ khi chuyển trang ([ui-flow](ui-flow.md)) |
 | **Khu vực quản trị** | Admin quản lý danh mục mặc định và tỷ giá nhập tay ([admin-flow](admin-flow.md)) |
 | **Bảo mật** | Giới hạn đoán mật khẩu, thu hồi phiên, header bảo mật và CSP, hạn mức chi phí AI, chống "zip bomb" khi tải Excel ([security-flow](security-flow.md)) |
@@ -98,7 +98,7 @@ Còn thiếu về vận hành tài khoản: quên mật khẩu / khôi phục t�
 | --- | :-: | --- |
 | Đăng ký, đăng nhập, quản lý hồ sơ (ngôn ngữ, tiền tệ mặc định) | ✅ | `auth`, `language-currency` |
 | Tạo được ít nhất một ví và xem đúng số dư sau khi có giao dịch | ✅ | `accounts-categories`, `transactions` |
-| Nhập giao dịch thủ công và import được CSV/Excel, hiển thị chính xác trong lịch sử | ✅ | `transactions`, `imports`, `import-templates` |
+| Nhập giao dịch thủ công và import được PDF/Excel, hiển thị chính xác trong lịch sử | ✅ | `transactions`, `imports`, `import-templates` |
 | Đặt ngân sách theo danh mục/tháng và nhận cảnh báo khi vượt ngưỡng | ✅ | `budgets` |
 | Tạo và theo dõi tiến độ ít nhất một mục tiêu tiết kiệm | ✅ | `savings` |
 | Dashboard hiển thị đúng thu/chi/số dư và biểu đồ **theo danh mục, theo thời gian** | 🟡 | `dashboard`, `ui`. Theo danh mục và theo tháng đã có; **số dư theo thời gian** chưa có (mục 3) |

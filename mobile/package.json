@@ -1,0 +1,17 @@
+{
+  "name": "@fm/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "run": "cap run android"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  }
+}

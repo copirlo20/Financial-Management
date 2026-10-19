@@ -1,7 +1,7 @@
 # Cấu trúc chương trình
 
-Dự án chia thành ba phần chạy độc lập, một gói dùng chung, bộ kiểm thử và tài liệu, tất cả cùng cấp ở thư mục gốc. Bốn gói
-`frontend`, `backend`, `database`, `shared` là các **npm workspaces** (một `node_modules` chung).
+Dự án chia thành ba phần chạy độc lập, một gói dùng chung, app Android, bộ kiểm thử và tài liệu, tất cả cùng cấp ở thư mục gốc.
+Năm gói `frontend`, `backend`, `database`, `shared`, `mobile` là các **npm workspaces** (một `node_modules` chung).
 
 ```
 Financial Management/
@@ -9,8 +9,9 @@ Financial Management/
 ├── backend/      Express: API, nghiệp vụ, xác thực, AI, đọc file sao kê, sao kê PDF
 ├── database/     Prisma: schema, migration, seed, client đã sinh
 ├── shared/       Mã thuần dùng chung cho frontend và backend (bản dịch, định dạng tiền/ngày, nhãn, hằng số)
+├── mobile/       Capacitor: app Android là WebView mở frontend (mobile-flow.md)
 ├── tests/        Kiểm thử đầu-cuối (chạy cả hệ thống), trình duyệt thật, máy chủ AI giả (Claude, OpenAI)
-├── scripts/      dev.mjs: chạy backend + frontend cùng lúc
+├── scripts/      dev.mjs: chạy backend + frontend cùng lúc; network.mjs: địa chỉ LAN của máy
 ├── docs/         PRD, kiến trúc, kế hoạch, luồng hoạt động từng chức năng (*-flow.md; mục lục ở mục Tài liệu của README)
 ├── .agents/      Hướng dẫn Prisma cho trợ lý AI (.claude/skills là liên kết tới đây, không commit; skills-lock.json ghi phiên bản)
 ├── CLAUDE.md     Hướng dẫn và quy ước bắt buộc cho trợ lý AI khi làm việc trong dự án
@@ -50,7 +51,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `app/layout.tsx`, `globals.css`, `global-error.tsx` | Layout gốc (ngôn ngữ, giao diện sáng/tối), biến màu và biến thể `dark`, trang lỗi cuối cùng |
 | `proxy.ts` | Chạy trước mọi yêu cầu: làm mới access token hết hạn, đẩy khách chưa đăng nhập về `/login`, đặt `Content-Security-Policy` (nonce) và HSTS |
 | `next.config.ts` | Header bảo mật cố định, giới hạn tải lên của Server Action, `allowedDevOrigins` (tự lấy mọi IPv4 của máy) |
-| `instrumentation-client.ts` | Chạy trong trình duyệt trước khi trang hydrate. Lúc phát triển, bỏ cảnh báo hydration chỉ do Chrome trên iPhone gắn thuộc tính `__gcr…` cho tính năng tự điền; mọi khác biệt khác vẫn được báo |
+| `instrumentation-client.ts` | Chạy trong trình duyệt trước khi trang hydrate. Lúc phát triển, bỏ cảnh báo hydration chỉ do Chrome trên iPhone gắn thuộc tính `__gcr…` cho tính năng tự điền; mọi khác biệt khác vẫn được báo. Cũng lúc phát triển, chặn vòng lặp kết nối lại của HMR (Next.js) làm trang kẹt ở "Rendering…" ([mobile-flow.md](mobile-flow.md)) |
 | `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
@@ -69,7 +70,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `src/data/` | Truy vấn dùng chung: tổng hợp báo cáo, trạng thái ngân sách, lựa chọn cho form |
 | `src/exchange.ts` | Tỷ giá, quy đổi, tính lại bản chụp quy đổi |
 | `src/reports/` | Sao kê PDF: `statement.ts` tính số liệu, `statement-pdf.ts` vẽ bằng `pdfkit` |
-| `src/imports/` | Đọc CSV/Excel, chống "zip bomb", ghép cột, lưu file tạm, file mẫu, đọc bằng AI |
+| `src/imports/` | Đọc Excel, dựng lại bảng từ PDF (`parse-pdf.ts`), chống "zip bomb", ghép cột, lưu file tạm, file mẫu, đọc bằng AI |
 | `src/ai/` | Giao diện AI chung (`model.ts`) với hai bản cài đặt (`anthropic.ts`, `openai.ts`), chọn nhà cung cấp và hạn mức token (`client.ts`), công cụ của chatbot, thông báo lỗi |
 | `src/validations/` | Schema Zod cho từng chức năng |
 | `src/rate-limit.ts`, `limits.ts`, `maintenance.ts`, `i18n.ts` | Bộ đếm giới hạn (bảng `rate_limits`), giới hạn số lượng mỗi người, dọn dẹp định kỳ, dịch thông báo theo ngôn ngữ yêu cầu |
@@ -98,7 +99,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | --- | --- |
 | `run-e2e.mjs` | Trình chạy: build frontend, dựng backend và frontend trên cổng riêng cùng máy chủ AI giả, chạy từng bộ, dọn dữ liệu. Dựng thêm một bản app dùng OpenAI để chạy lại các bộ AI |
 | `e2e/*.e2e.mjs` | Bộ kiểm thử qua HTTP như trình duyệt không có JavaScript (biểu mẫu, cookie, chuyển hướng), kiểm cả trang lẫn database |
-| `harness.mjs` | Phần dùng chung của mọi bộ kiểm thử (e2e và trình duyệt): cấu hình, `check()`/`report()`, đọc trang và form, gửi form (`submit`, cả file; `formDefaults`), cookie (`cookieHeader`, `browserCookies` cho trình duyệt), đăng ký người dùng, kết nối database |
+| `harness.mjs` | Phần dùng chung của mọi bộ kiểm thử (e2e và trình duyệt): cấu hình, `check()`/`report()`, đọc trang và form, gửi form (`submit`, cả file; `formDefaults`), cookie (`cookieHeader`, `browserCookies` cho trình duyệt), đăng ký người dùng, dựng file sao kê (`statementPdf`, `statementXlsx`), kết nối database |
 | `browser/*.browser.mjs`, `cdp.mjs` | Bộ kiểm thử trong Edge/Chrome thật qua DevTools Protocol: biểu đồ, modal, giao diện tối, điện thoại |
 | `mock-ai.mjs` | Máy chủ giả của Claude và OpenAI: không bao giờ gọi API thật |
 | `pdf-text.mjs` | Đọc chữ trong PDF do app xuất, để kiểm số liệu |
@@ -129,12 +130,14 @@ Bảng route đầy đủ ở [api.md](api.md).
 | `npm run lint`, `npm run typecheck` | Kiểm tra mọi gói (lint gồm cả `tests/` và `scripts/`). |
 | `npm run db:migrate` | Tạo/áp migration khi sửa schema (`prisma migrate dev`). |
 | `npm run db:deploy`, `db:generate`, `db:seed` | Áp migration, sinh lại client, nạp danh mục mặc định. |
+| `npm run mobile:sync`, `mobile:open`, `mobile:run` | Ghi địa chỉ máy chủ vào project Android; mở nó trong Android Studio; build, cài và mở app trên máy ảo/điện thoại ([mobile-flow.md](mobile-flow.md)). |
 
 ## Biến môi trường
 
 Một file `.env` ở thư mục gốc, cả backend lẫn công cụ đều đọc. **Bắt buộc**: `DATABASE_URL`, `AUTH_SECRET` (từ 32 ký tự).
 Tùy chọn: khóa và mô hình AI (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `AI_PROVIDER`…), hạn mức (`AI_DAILY_TOKEN_BUDGET`, `AUTH_LIMIT_PER_IP`…),
-cổng (`PORT` cho frontend mặc định 3000, `BACKEND_PORT` mặc định 4000, `HOST`, `BACKEND_URL`; `npm run dev` tự đặt `BACKEND_URL`).
+cổng (`PORT` cho frontend mặc định 3000, `BACKEND_PORT` mặc định 4000, `HOST`, `BACKEND_URL`; `npm run dev` tự đặt `BACKEND_URL`),
+`MOBILE_SERVER_URL` (trang web mà app Android mở).
 Bảng đầy đủ với giá trị mặc định: mục [Cấu hình](../README.md#cau-hinh) của README.
 
 ## Thêm một tính năng

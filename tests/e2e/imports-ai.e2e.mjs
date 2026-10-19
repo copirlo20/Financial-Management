@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from "node:fs";
-import { root, STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults } from "../harness.mjs";
+import { root, STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx } from "../harness.mjs";
 
 // Importing with the AI assistant. The AI API is replaced by tests/mock-ai.mjs, which the
 // runner starts and the app is pointed at; this suite queues the assistant's answers and reads back
@@ -37,19 +37,21 @@ const importedRows = async (batchId) =>
 
 // ---------- Fixture files ----------
 // Column names the built-in guesser does not know: only the assistant can make sense of this file.
-const ODD_CSV = Buffer.from(
-  [
-    "Bao cao tai khoan,,",
-    "Thoi diem,Chi tiet,Bien dong",
-    '05/10/2026,GRAB chuyen di,"-45,000"',
-    '06/10/2026,Luong thang 10,"20,000,000"',
-    '07/10/2026,GRAB chuyen di,"-30,000"',
-    '08/10/2026,,"-10,000"',
-  ].join("\r\n"),
-  "utf8",
-);
-const KNOWN_CSV = Buffer.from(["Ngày,Nội dung,Số tiền", "05/10/2026,Tiền điện,-120000", "06/10/2026,Thưởng,500000"].join("\n"), "utf8");
-const PDF = Buffer.from("%PDF-1.4\n% stand-in statement; the mock assistant does not read it\n%%EOF\n", "latin1");
+const ODD_ROWS = [
+  ["Bao cao tai khoan"],
+  ["Thoi diem", "Chi tiet", "Bien dong"],
+  ["05/10/2026", "GRAB chuyen di", "-45,000"],
+  ["06/10/2026", "Luong thang 10", "20,000,000"],
+  ["07/10/2026", "GRAB chuyen di", "-30,000"],
+  ["08/10/2026", null, "-10,000"],
+];
+const ODD_XLSX = await statementXlsx(ODD_ROWS);
+const KNOWN_XLSX = await statementXlsx([["Ngày", "Nội dung", "Số tiền"], ["05/10/2026", "Tiền điện", -120000], ["06/10/2026", "Thưởng", 500000]]);
+// A PDF with text: the code can rebuild its table, and the assistant gets the file itself.
+const PDF = await statementPdf([["Ngày", "Nội dung", "Số tiền"], ["09/10/2026", "GRAB", "-45,000"]], { right: [2] });
+// A file pdf.js cannot open, as with some scans: only the assistant may read it, and nothing else can stand in
+// when it fails. The mock assistant does not read either.
+const UNREADABLE_PDF = Buffer.from("%PDF-1.4\n% stand-in statement\n%%EOF\n", "latin1");
 
 try {
   const jarA = await registerUser(A, "User A");
@@ -78,7 +80,7 @@ try {
   const cancel = async (id) => submit(`/imports/${id}`, formWith(await page(`/imports/${id}`, jarA), "Hủy lần nhập này"), {}, jarA);
 
   let html = await page("/imports", jarA);
-  check("upload form offers the assistant and accepts PDF", html.includes('name="useAi"') && html.includes(".csv,.xlsx,.pdf") && clean(html).includes(PROVIDER === "openai" ? "Dùng trợ lý AI (GPT)" : "Dùng trợ lý AI (Claude)") && clean(html).includes(PROVIDER === "openai" ? "gửi tới OpenAI" : "gửi tới Anthropic"));
+  check("upload form offers the assistant and accepts PDF", html.includes('name="useAi"') && html.includes('accept=".pdf,.xlsx"') && clean(html).includes(PROVIDER === "openai" ? "Dùng trợ lý AI (GPT)" : "Dùng trợ lý AI (Claude)") && clean(html).includes(PROVIDER === "openai" ? "gửi tới OpenAI" : "gửi tới Anthropic"));
 
   // ---------- Spreadsheet: the assistant reads every row ----------
   const tx = (row, date, type, amount, description, category = null) => ({ row, date, type, amount, description, category });
@@ -97,13 +99,13 @@ try {
       },
     },
   ]);
-  const batch1 = await uploadOk({ bytes: ODD_CSV, name: "la.csv" });
+  const batch1 = await uploadOk({ bytes: ODD_XLSX, name: "la.xlsx" });
   let requests = await sent();
   let batch = await batchOf(batch1);
   const tableCall = requests[0]?.messages[0].content ?? "";
   check("one streamed call carries the key, a model and a JSON schema", requests.length === 1 && requests[0].provider === PROVIDER && requests[0].stream === true && requests[0].apiKey === "e2e-test-key" && Boolean(requests[0].model) && requests[0].output_config?.format?.type === "json_schema", `${requests.length}`);
   check("the call sends every row of the file, the user's categories and the account currency",
-    ODD_CSV.toString("utf8").split("\r\n").length === 6 && [1, 2, 3, 4, 5, 6].every((n) => tableCall.includes(`row ${n}: [`)) &&
+    ODD_ROWS.length === 6 && [1, 2, 3, 4, 5, 6].every((n) => tableCall.includes(`row ${n}: [`)) &&
       tableCall.includes('row 2: ["Thoi diem","Chi tiet","Bien dong"]') && tableCall.includes('row 6: ["08/10/2026",null,"-10,000"]') &&
       /\d+ \| EXPENSE \| Di chuyển/.test(tableCall) && /\d+ \| INCOME \| Lương/.test(tableCall) && !tableCall.includes("Riêng của B") && tableCall.includes("Account currency: VND") && !tableCall.includes("Top of the file"),
     tableCall.slice(-300));
@@ -143,9 +145,9 @@ try {
   // ---------- A long spreadsheet is read in several parts ----------
   const LONG_ROWS = 319;
   const day = (i) => String((i % 28) + 1).padStart(2, "0");
-  const LONG_CSV = Buffer.from(["Thoi diem,Chi tiet,Bien dong", ...Array.from({ length: LONG_ROWS }, (_, i) => `${day(i)}/10/2026,GD so ${i + 1},${i % 2 ? "" : "-"}${1000 + i}`)].join("\n"), "utf8");
+  const LONG_XLSX = await statementXlsx([["Thoi diem", "Chi tiet", "Bien dong"], ...Array.from({ length: LONG_ROWS }, (_, i) => [`${day(i)}/10/2026`, `GD so ${i + 1}`, (i % 2 ? 1 : -1) * (1000 + i)])]);
   await queue([{ readRows: true }, { readRows: true }, { readRows: true }]);
-  const batchLong = await uploadOk({ bytes: LONG_CSV, name: "dai.csv" }, { useAi: "on", accountId: bank2 });
+  const batchLong = await uploadOk({ bytes: LONG_XLSX, name: "dai.xlsx" }, { useAi: "on", accountId: bank2 });
   requests = await sent();
   const parts = requests.map((r) => r.messages[0].content);
   const rowsRead = parts.flatMap((part) => [...part.split("Rows to read:\n")[1].matchAll(/^row (\d+): /gm)].map((m) => Number(m[1]))).sort((a, b) => a - b);
@@ -161,16 +163,16 @@ try {
 
   // ---------- Opting out ----------
   await queue([]);
-  const batch2 = await uploadOk({ bytes: KNOWN_CSV, name: "tu-ghep.csv" }, {});
+  const batch2 = await uploadOk({ bytes: KNOWN_XLSX, name: "tu-ghep.xlsx" }, {});
   html = await page(`/imports/${batch2}`, jarA);
   check("without the assistant nothing is sent and the columns are mapped by hand as before",
     (await sent()).length === 0 && (await batchOf(batch2)).aiAnalysis === null && existsSync(storagePath((await batchOf(batch2)).tempFileKey)) && html.includes('name="headerRow"') && !html.includes("rowCategory-"));
   await cancel(batch2);
 
   // ---------- Assistant unavailable or wrong: fall back to mapping by hand ----------
-  const fallsBack = async (label, answers, file = KNOWN_CSV) => {
+  const fallsBack = async (label, answers, file = KNOWN_XLSX, name = "ai-loi.xlsx") => {
     await queue(answers);
-    const id = await uploadOk({ bytes: file, name: "ai-loi.csv" });
+    const id = await uploadOk({ bytes: file, name });
     const stored = await batchOf(id);
     const body = await page(`/imports/${id}`, jarA);
     const guessed = formDefaults(formWith(body, 'name="headerRow"'));
@@ -183,23 +185,27 @@ try {
   await fallsBack("a failing assistant leaves the file to be mapped by hand, with a notice", []);
   await fallsBack("an answer with no transactions does the same", [{ output: { transactions: [] } }]);
   await fallsBack("an answer cut off by the length limit does the same", [{ text: '{"transactions":[{"row":2,"da', stopReason: "max_tokens" }]);
-  await fallsBack("one failing part fails the whole file rather than importing some of it", [{ readRows: true }, { status: 400 }, { readRows: true }], LONG_CSV);
-  const hugeCsv = Buffer.from(["Ngày,Nội dung,Số tiền", ...Array.from({ length: 3000 }, (_, i) => `05/10/2026,GD ${i},-${i + 1}`)].join("\n"), "utf8");
-  check("a file over the assistant's row limit is not sent at all", (await fallsBack("a file over the assistant's row limit is mapped by hand", [], hugeCsv)) === 0);
+  await fallsBack("one failing part fails the whole file rather than importing some of it", [{ readRows: true }, { status: 400 }, { readRows: true }], LONG_XLSX);
+  const hugeXlsx = await statementXlsx([["Ngày", "Nội dung", "Số tiền"], ...Array.from({ length: 3000 }, (_, i) => ["05/10/2026", `GD ${i}`, -(i + 1)])]);
+  check("a file over the assistant's row limit is not sent at all", (await fallsBack("a file over the assistant's row limit is mapped by hand", [], hugeXlsx)) === 0);
+  check("a PDF the assistant fails on is mapped by hand from its text", (await fallsBack("a PDF the assistant fails on is mapped by hand", [], PDF, "ai-loi.pdf")) === 1);
 
-  // ---------- PDF ----------
+  // ---------- PDF only the assistant can read ----------
   const before = await batchCount(aId);
-  check("a .pdf that is not a PDF is rejected", (await uploadError({ bytes: Buffer.from("hello"), name: "gia.pdf" })).includes("đúng định dạng PDF"));
-  check("a PDF needs the assistant switched on", (await uploadError({ bytes: PDF, name: "sao-ke.pdf" }, {})).includes("File PDF chỉ đọc được bằng trợ lý AI"));
+  await queue([]);
+  check("a .pdf that is not a PDF is rejected without asking the assistant", (await uploadError({ bytes: Buffer.from("hello"), name: "gia.pdf" })).includes("đúng định dạng PDF") && (await sent()).length === 0);
+  check("without the assistant, a PDF the code cannot read is refused", (await uploadError({ bytes: UNREADABLE_PDF, name: "sao-ke.pdf" }, {})).includes("đúng định dạng PDF"));
   await queue([{ status: 401 }]);
-  check("a rejected API key is reported without details", (await uploadError({ bytes: PDF, name: "sao-ke.pdf" })).includes("Khóa API của trợ lý AI không hợp lệ"));
+  check("a rejected API key is reported without details", (await uploadError({ bytes: UNREADABLE_PDF, name: "sao-ke.pdf" })).includes("Khóa API của trợ lý AI không hợp lệ"));
   await queue([{ output: { transactions: [] } }]);
-  check("a PDF without transactions is reported", (await uploadError({ bytes: PDF, name: "sao-ke.pdf" })).includes("không tìm thấy giao dịch nào"));
+  check("a PDF without transactions is reported", (await uploadError({ bytes: UNREADABLE_PDF, name: "sao-ke.pdf" })).includes("không tìm thấy giao dịch nào"));
   await queue([{ text: '{"transactions":[{"date":"2026-10-05","type":"EXPE', stopReason: "max_tokens" }]);
-  check("an answer cut off by the length limit asks for smaller files", (await uploadError({ bytes: PDF, name: "sao-ke.pdf" })).includes("quá nhiều giao dịch"));
+  check("an answer cut off by the length limit asks for smaller files", (await uploadError({ bytes: UNREADABLE_PDF, name: "sao-ke.pdf" })).includes("quá nhiều giao dịch"));
   await queue([{ text: "not json at all" }]);
-  check("an unreadable answer is reported", (await uploadError({ bytes: PDF, name: "sao-ke.pdf" })).includes("Trợ lý AI không phân tích được file này"));
+  check("an unreadable answer is reported", (await uploadError({ bytes: UNREADABLE_PDF, name: "sao-ke.pdf" })).includes("Trợ lý AI không phân tích được file này"));
   check("failed PDF uploads leave no batch", (await batchCount(aId)) === before);
+
+  // ---------- PDF read by the assistant ----------
 
   await queue([
     {
@@ -270,9 +276,9 @@ try {
   check("a read that uses up the user's daily budget still completes", Boolean(expensive) && (await sent()).length === 1);
   await cancel(expensive);
   await queue([{ output: { transactions: [] } }]);
-  check("the next PDF is refused before reaching the model", (await uploadError({ bytes: PDF, name: "dat-nua.pdf" })).includes("hết hạn mức hôm nay") && (await sent()).length === 0);
+  check("the next PDF is refused before reaching the model", (await uploadError({ bytes: UNREADABLE_PDF, name: "dat-nua.pdf" })).includes("hết hạn mức hôm nay") && (await sent()).length === 0);
   await queue([]);
-  const fallback = await uploadOk({ bytes: KNOWN_CSV, name: "het-han-muc.csv" });
+  const fallback = await uploadOk({ bytes: KNOWN_XLSX, name: "het-han-muc.xlsx" });
   const stored = await batchOf(fallback);
   check("a spreadsheet then falls back to mapping by hand", stored.aiAnalysis?.kind === "table" && stored.aiAnalysis.failed === true && (await sent()).length === 0, JSON.stringify(stored.aiAnalysis));
   await cancel(fallback);

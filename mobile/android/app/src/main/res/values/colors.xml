@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The brand's deepest violet (bg-brand in frontend/app/globals.css), behind the logo while the app starts. -->
+    <color name="splash_background">#370C6F</color>
+</resources>

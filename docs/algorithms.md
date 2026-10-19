@@ -54,7 +54,7 @@ Xem [request-flow.md](request-flow.md).
 | JSON không có kiểu tiền và ngày | **Gắn nhãn kiểu**: `encode` thay `Decimal` → `{"$decimal": s}`, `Date` → `{"$date": iso}` (đệ quy qua mảng và đối tượng); `decode` ở frontend làm ngược lại |
 | Trang cũ hiện số liệu cũ sau khi ghi | Sau mỗi lệnh ghi frontend gọi `revalidatePath("/", "layout")` rồi mới chuyển trang |
 | Lấy địa chỉ client khi sau reverse proxy | Phần tử **cuối** của `X-Forwarded-For` (do thứ đứng ngay trước server thêm vào), gửi cho backend qua `x-client-ip` |
-| Backend khởi động lại làm mọi lời gọi hỏng trong vài giây | `fetchBackend` **thử lại** khi lỗi là `ECONNREFUSED` (chưa kết nối được, tức yêu cầu chưa tới backend nên không thể bị xử lý hai lần) hoặc kết nối bị cắt (`ECONNRESET`, `UND_ERR_SOCKET`) **với yêu cầu đọc** (GET/HEAD; yêu cầu ghi bị cắt giữa chừng có thể đã được xử lý nên không lặp lại): chờ 250, 500, 1.000, 1.500, 2.000 ms (~5 giây), rồi ném `BackendConnectionError` nêu rõ địa chỉ không trả lời; lệnh ghi bị cắt giữa chừng ném ngay `BackendConnectionError` với `mayHaveRun = true`; mọi lỗi khác ném ngay. `formCommand`/`formUpload` đổi lỗi này thành thông báo trên form (giữ dữ liệu đã nhập, bỏ trường mật khẩu), phân biệt "chưa có gì thay đổi" với "có thể đã lưu". Từ lần thử thứ hai, lời gọi mang một `signal` riêng: trong lúc render, Next.js trả mọi GET cùng URL về promise của lần gọi đầu (*request memoization*), kể cả khi promise đó đã thất bại, nên thiếu `signal` thì lần thử lại chỉ nhận lại lỗi cũ. Lúc phát triển, `dev.mjs` đọc dòng `Failed running` của `node --watch`: crash sau khi đã nghe cổng thì chạy lại backend (tối đa 3 lần trong 60 giây), crash lúc khởi động thì chờ sửa mã |
+| Backend khởi động lại làm mọi lời gọi hỏng trong vài giây | `fetchBackend` **thử lại** khi lỗi là `ECONNREFUSED` (chưa kết nối được, tức yêu cầu chưa tới backend nên không thể bị xử lý hai lần) hoặc kết nối bị cắt (`ECONNRESET`, `UND_ERR_SOCKET`) **với yêu cầu đọc** (GET/HEAD; yêu cầu ghi bị cắt giữa chừng có thể đã được xử lý nên không lặp lại): chờ 250, 500, 1.000, 1.500, 2.000 ms (~5 giây), rồi ném `BackendConnectionError` nêu rõ địa chỉ không trả lời; lệnh ghi bị cắt giữa chừng ném ngay `BackendConnectionError` với `mayHaveRun = true`; mọi lỗi khác ném ngay. `formCommand`/`formUpload` đổi lỗi này thành thông báo trên form (giữ dữ liệu đã nhập, bỏ trường mật khẩu), phân biệt "chưa có gì thay đổi" với "có thể đã lưu". Từ lần thử thứ hai, lời gọi mang một `signal` riêng: trong lúc render, Next.js trả mọi GET cùng URL về promise của lần gọi đầu (*request memoization*), kể cả khi promise đó đã thất bại, nên thiếu `signal` thì lần thử lại chỉ nhận lại lỗi cũ. Lúc phát triển, `dev.mjs` tự nạp lại backend (không dùng `node --watch`): theo dõi `backend/src`, `shared/src`, `database/src` và `.env`, và chỉ khởi động lại khi **thời điểm sửa hoặc kích thước** của một file khác lần trước. Trên Windows, `node --watch` khởi động lại cả khi file chỉ được **đọc** (đọc làm đổi thời điểm truy cập, NTFS cập nhật tối đa mỗi giờ, và trình theo dõi file báo đó là thay đổi), nên backend từng tự khởi động lại giữa chừng khi nạp một module lần đầu (worker của pdf.js ở lần đọc PDF đầu tiên) hay khi chương trình khác (trình soạn thảo, Gradle, Capacitor CLI) đọc file nó dùng. Crash sau khi đã nghe cổng thì chạy lại backend (tối đa 3 lần trong 60 giây), crash lúc khởi động thì chờ sửa mã |
 | Lỗi nhập liệu không nên là mã lỗi HTTP | Trả `200` với `state` (lỗi theo trường, giữ `values`); chỉ lỗi thật (`401`, `404`, `429`, `5xx`) dùng mã HTTP |
 
 ---
@@ -292,10 +292,31 @@ Xem [import-flow.md](import-flow.md). Mã: `backend/src/imports/`, `backend/src/
 
 | Bước | Phương pháp |
 | --- | --- |
-| **Mã hóa CSV** | Thử UTF-8 **nghiêm ngặt** (`fatal: true`); lỗi thì **Windows-1258** (nhiều ngân hàng Việt Nam xuất kiểu này); nhận UTF-16LE nếu có BOM |
-| **Phân tích CSV** | `papaparse`, bỏ dòng trống (`skipEmptyLines: "greedy"`) |
 | **Excel** | `exceljs`, lấy **sheet đầu**; mỗi ô chuẩn hóa: số hữu hạn, ngày, chuỗi đã cắt khoảng trắng, công thức → kết quả, văn bản giàu định dạng → văn bản thuần |
+| **PDF** | `pdfjs-dist` (pdf.js của Mozilla) lấy chữ kèm tọa độ, rồi **dựng lại bảng** (dưới đây). Từ chối file thiếu dấu hiệu `%PDF-`, có mật khẩu, hoặc quá **200 trang** |
 | **Giới hạn** | Tối đa 50 cột (cắt), bỏ dòng trống hoàn toàn, tối đa 10.000 dòng; số dòng người dùng thấy đếm các dòng không trống theo thứ tự trong file |
+
+**Dựng lại bảng từ PDF** ([parse-pdf.ts](../backend/src/imports/parse-pdf.ts)). PDF không có ô, chỉ có các mẩu chữ đặt ở tọa độ trên trang:
+
+```text
+0. Bỏ mẩu chữ nằm ngoài khung trang: không hiện ra, và tọa độ cực xa (file cố ý) sẽ làm mảng đếm ở bước 4 lớn tùy ý
+1. Dòng: các mẩu cùng đường chân chữ (lệch y ≤ max(2, 0,4 × cỡ chữ)), xếp trên xuống, trang này tới trang sau;
+       đã xếp theo y nên mỗi mẩu chỉ so với dòng vừa mở (O(n), không dò lại mọi dòng)
+2. Ô: trong một dòng, hai mẩu cách nhau < 0,5 × cỡ chữ là một ô (các từ của một đoạn chữ); xa hơn là ô mới
+3. Dòng giao dịch: có một ô giống ngày (d/m/y bằng số) và một ô khác giống số tiền
+4. Cột: trên các dòng giao dịch, đếm ở mỗi tọa độ x có bao nhiêu dòng có chữ phủ lên
+       cột = dải x liền nhau được ≥ max(1, 5% số dòng giao dịch) phủ
+       → một tiêu đề hay dòng tổng trải ngang không làm dính hai cột
+   ô nằm ngoài mọi dải (cột hiếm khi có số, như tiền vào của sao kê thẻ) → dải riêng, không bị dồn sang cột bên cạnh
+   mỗi ô vào dải nó chồng lên nhiều nhất; hai ô cùng dải thì nối bằng khoảng trắng
+5. Dòng nối tiếp: dòng ngay dưới (cách ≤ 1,6 × cỡ chữ, cùng trang), không có ngày và không có số tiền
+       → nối vào dòng trên theo từng cột (diễn giải xuống dòng, tên cột viết hai dòng)
+6. Giữ mọi dòng tới dòng giao dịch đầu tiên (phần đầu, nơi có tên cột);
+   sau đó chỉ giữ dòng có ngày: tên cột lặp ở đầu mỗi trang, dòng tổng, ghi chú, số trang
+   không thể là giao dịch và chỉ thành "dòng lỗi"
+```
+
+Kết quả đi tiếp qua **đúng các bước của Excel**: gợi ý ghép cột (8.3) rồi đọc từng dòng (8.4). PDF scan (ảnh) không có chữ nên không có dòng nào: app báo lỗi, hoặc chuyển cho trợ lý AI nếu người dùng bật.
 
 ### 8.2 Chống "zip bomb" cho `.xlsx` (`xlsx-guard.ts`)
 
@@ -384,7 +405,7 @@ Số dòng gốc được gửi cùng nội dung và AI phải trả lại, nên
 
 ### 9.2 PDF
 
-Cả file gửi **trong một lệnh gọi** (PDF không có ô để chia). Hết chỗ trả lời (`truncated`) → từ chối kèm gợi ý tách file; không dùng kết quả cắt dở.
+Nguyên file gửi **trong một lệnh gọi**, để AI thấy cả bố cục chứ không phải bảng app dựng lại (8.1). Hết chỗ trả lời (`truncated`) → từ chối kèm gợi ý tách file; không dùng kết quả cắt dở.
 
 ### 9.3 Kiểm lại những gì AI trả về
 

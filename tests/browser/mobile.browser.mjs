@@ -1,7 +1,7 @@
 // The app on a phone: touch input, small screens, and data that stresses the layout (long unbroken names,
 // huge amounts, wide statement files). Uses a real headless Edge/Chrome with phone emulation.
 import path from "node:path";
-import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, root } from "../harness.mjs";
+import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, root, statementXlsx } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
 // A long address with no breaking points: the profile card has to cope with it.
@@ -52,7 +52,7 @@ try {
   const doneImportId = await insert(
     `insert into import_batches (id,"userId","accountId","fileName",status,"rowCount","importedCount","skippedCount","errorMessage","updatedAt")
      values (gen_random_uuid()::text,$1,$2,$3,'PROCESSED',30,20,4,$4,now()) returning id`,
-    [userId, accountA, UNBROKEN + UNBROKEN + UNBROKEN + ".csv", JSON.stringify({ rows: Array.from({ length: 6 }, (_, i) => ({ row: i + 3, message: "Ngày không hợp lệ hoặc không đúng định dạng đã chọn." })), more: 0 })]);
+    [userId, accountA, UNBROKEN + UNBROKEN + UNBROKEN + ".pdf", JSON.stringify({ rows: Array.from({ length: 6 }, (_, i) => ({ row: i + 3, message: "Ngày không hợp lệ hoặc không đúng định dạng đã chọn." })), more: 0 })]);
 
   // A statement with many wide columns, uploaded through the real form.
   const importsPage = await (await fetch(BASE + "/imports", { headers: { cookie } })).text();
@@ -60,8 +60,11 @@ try {
   const upload = new FormData();
   for (const [tag] of uploadForm.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) upload.append(decode(tag.match(/name="([^"]*)"/)[1]), decode(tag.match(/value="([^"]*)"/)?.[1] ?? ""));
   upload.append("accountId", accountA);
-  const wide = ["Ngày giao dịch,Diễn giải,Số tiền,Số dư sau giao dịch,Mã tham chiếu,Chi nhánh thực hiện,Kênh giao dịch,Ghi chú thêm", ...Array.from({ length: 6 }, (_, i) => `0${i + 1}/10/2026,Thanh toán hóa đơn điện nước tháng này cho khách hàng ${i},-${(i + 1) * 100000},${12000000 - i * 100000},FT26${280000 + i}XYZ,Chi nhánh Hà Nội - Phòng giao dịch Đống Đa,Internet Banking,Ghi chú dài để kiểm tra bảng xem trước`)].join("\n");
-  upload.append("file", new Blob([wide]), "sao-ke-rong.csv");
+  const wide = await statementXlsx([
+    ["Ngày giao dịch", "Diễn giải", "Số tiền", "Số dư sau giao dịch", "Mã tham chiếu", "Chi nhánh thực hiện", "Kênh giao dịch", "Ghi chú thêm"],
+    ...Array.from({ length: 6 }, (_, i) => [`0${i + 1}/10/2026`, `Thanh toán hóa đơn điện nước tháng này cho khách hàng ${i}`, -(i + 1) * 100000, 12000000 - i * 100000, `FT26${280000 + i}XYZ`, "Chi nhánh Hà Nội - Phòng giao dịch Đống Đa", "Internet Banking", "Ghi chú dài để kiểm tra bảng xem trước"]),
+  ]);
+  upload.append("file", new Blob([wide]), "sao-ke-rong.xlsx");
   const uploaded = await fetch(BASE + "/imports", { method: "POST", body: upload, redirect: "manual", headers: { cookie, origin: BASE } });
   const pendingImportId = uploaded.headers.get("location").split("/").pop();
   const systemCategoryId = food;
