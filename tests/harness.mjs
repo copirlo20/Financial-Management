@@ -157,6 +157,18 @@ export const db = new Client({ connectionString: (() => { const u = new URL(proc
 export const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 export const userId = async (email) => (await one(`select id from users where email = $1`, [email])).id;
 
+// ---------- Fixtures written straight to the database ----------
+export const systemCategory = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
+
+// An account of `owner` holding `balance`, with no transactions yet.
+export async function addAccount(owner, name, currency = "VND", balance = 0, type = "CASH") {
+  return (await one(
+    `insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt")
+     values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$5,now()) returning id`,
+    [owner, name, type, currency, balance],
+  )).id;
+}
+
 // Where uploaded statements wait between upload and confirm (backend/src/imports/storage.ts).
 export const importFilePath = (key) => `${root}backend/storage/imports/${key}`;
 

@@ -20,6 +20,7 @@ const AMOUNT_LIKE = /^[(+-]?\d[\d.,\s]*\)?(\s*[A-Za-z₫$€£¥]{1,3})?$/;
 type Piece = { text: string; x0: number; x1: number; y: number; size: number };
 type Line = { page: number; y: number; size: number; cells: Piece[] };
 type Band = { x0: number; x1: number };
+type ColumnBand = Band & { extra: boolean };
 
 async function readPieces(data: Uint8Array): Promise<Piece[][]> {
   const loading = getDocument({ data, disableFontFace: true, useSystemFonts: false, verbosity: 0 });
@@ -105,8 +106,8 @@ function mergeSpans(spans: Band[]): Band[] {
 // The columns. Most come from the transaction lines: x positions covered by enough of them. A text that
 // only a line or two spread across (a title, a total) does not join two columns that way. A cell outside
 // every such band (a column that is rarely filled, such as money in on a card statement) gets a band of
-// its own rather than being pushed into a neighbour.
-function findBands(lines: Line[]): Band[] {
+// its own rather than being pushed into a neighbour; those bands are marked `extra`.
+function findBands(lines: Line[]): ColumnBand[] {
   let table = lines.filter(isTransactionLine);
   if (table.length === 0) table = lines.filter((line) => line.cells.length >= 2);
   if (table.length === 0) table = lines;
@@ -134,17 +135,24 @@ function findBands(lines: Line[]): Band[] {
   });
 
   const outside = lines.flatMap((line) => line.cells).filter((cell) => !strong.some((band) => overlap(cell, band) > 0));
-  return [...strong, ...mergeSpans(outside)].sort((a, b) => a.x0 - b.x0);
+  return [...strong.map((band) => ({ ...band, extra: false })), ...mergeSpans(outside).map((band) => ({ ...band, extra: true }))].sort(
+    (a, b) => a.x0 - b.x0,
+  );
 }
 
 const overlap = (cell: Band, band: Band) => Math.min(cell.x1, band.x1) - Math.max(cell.x0, band.x0);
 
-function toRow(line: Line, bands: Band[]): (string | null)[] {
+// Each cell goes to the column it overlaps most. A cell that touches a column of the transactions belongs
+// to it even when it overlaps an extra band more: a column name wider than the amounts under it (such as
+// "Ghi nợ (USD)" over "20.50") must stay with them, not go to a band made by a heading block above.
+function toRow(line: Line, bands: ColumnBand[]): (string | null)[] {
   const row: (string | null)[] = bands.map(() => null);
   for (const cell of line.cells) {
-    let best = 0;
+    const inTable = bands.some((band) => !band.extra && overlap(cell, band) > 0);
+    let best = -1;
     bands.forEach((band, index) => {
-      if (overlap(cell, band) > overlap(cell, bands[best])) best = index;
+      if (inTable && band.extra) return;
+      if (best < 0 || overlap(cell, band) > overlap(cell, bands[best])) best = index;
     });
     row[best] = row[best] === null ? cell.text : `${row[best]} ${cell.text}`;
   }

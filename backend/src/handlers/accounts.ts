@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@fm/database";
 import { formText, type FormState } from "@fm/shared/form-state";
 import { requireUser } from "../auth/current-user";
+import { sameName } from "../data/names";
 import { redirect } from "../http/respond";
 import { getI18n } from "../i18n";
 import { MAX_ACCOUNTS_PER_USER } from "../limits";
@@ -13,15 +14,7 @@ export type AccountFormState = FormState<"name" | "type" | "currency" | "initial
 const NOT_FOUND_MESSAGE = "Không tìm thấy tài khoản.";
 
 async function isNameTaken(userId: string, name: string, exceptId?: string): Promise<boolean> {
-  const existing = await prisma.account.findFirst({
-    where: {
-      userId,
-      name: { equals: name, mode: "insensitive" },
-      ...(exceptId ? { id: { not: exceptId } } : {}),
-    },
-    select: { id: true },
-  });
-  return existing !== null;
+  return (await prisma.account.findFirst({ where: { userId, ...sameName(name, exceptId) }, select: { id: true } })) !== null;
 }
 
 export async function createAccount(_prev: AccountFormState, formData: FormData): Promise<AccountFormState> {

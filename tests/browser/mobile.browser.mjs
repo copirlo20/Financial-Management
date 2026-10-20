@@ -1,7 +1,7 @@
 // The app on a phone: touch input, small screens, and data that stresses the layout (long unbroken names,
 // huge amounts, wide statement files). Uses a real headless Edge/Chrome with phone emulation.
 import path from "node:path";
-import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, statementXlsx, removeUsers } from "../harness.mjs";
+import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, statementXlsx, removeUsers, systemCategory } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
 // A long address with no breaking points: the profile card has to cope with it.
@@ -29,8 +29,7 @@ try {
 
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
   const month = today.slice(0, 7);
-  const sys = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-  const [food, salary] = [await sys("food"), await sys("salary")];
+  const [food, salary] = [await systemCategory("food"), await systemCategory("salary")];
   const insert = async (sql, params) => (await one(sql, params)).id;
   const accountA = await insert(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,$2,'BANK','VND',0,9999999999999.99,now()) returning id`, [userId, UNBROKEN]);
   const accountB = await insert(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,'Quỹ USD','CASH','USD',0,1250.5,now()) returning id`, [userId]);

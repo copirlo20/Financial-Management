@@ -47,11 +47,12 @@ Bố cục lấy từ sao kê ngân hàng: số dư đầu kỳ, **ghi nợ** (t
 | --- | --- | --- |
 | Tiền tệ | Của ví, nên khớp đúng số dư của ví | Tiền tệ mặc định của người dùng |
 | Số dư đầu kỳ | Số dư ban đầu của ví **cộng** mọi giao dịch trước ngày bắt đầu | Số dư ban đầu của các ví (đổi theo tỷ giá của **ngày bắt đầu**) cộng bản chụp quy đổi của giao dịch trước ngày bắt đầu |
-| Mỗi dòng | Số tiền gốc theo tiền tệ ví | Bản chụp quy đổi của giao dịch; cột "Số tiền gốc" giữ tiền tệ ban đầu |
+| Mỗi dòng | Số tiền theo tiền tệ ví | Bản chụp quy đổi của giao dịch; ví khác tiền tệ ghi thêm số tiền gốc trong diễn giải, ví dụ `(Đô la, 10.00 USD)` |
+| Cột Số dư | Bắt đầu từ số dư đầu kỳ (dòng đầu bảng chi tiết), sau mỗi dòng cộng ghi có, trừ ghi nợ | Như vậy |
 | Chuyển khoản | Chỉ một phía của ví đó | Hiện **cả hai phía**, kèm tên ví ở cuối diễn giải |
-| Số dư cuối kỳ | Đầu kỳ + ghi có − ghi nợ | Như vậy |
+| Số dư cuối kỳ | Số dư sau dòng cuối = đầu kỳ + ghi có − ghi nợ | Như vậy |
 
-- **Giao dịch chưa có tỷ giá** (chỉ ở chế độ "tất cả ví") vẫn được liệt kê nhưng không cộng vào tổng; phần ghi chú cuối sao kê nói rõ số lượng. Tương tự khi số dư ban đầu của một loại tiền không có tỷ giá.
+- **Giao dịch chưa có tỷ giá** (chỉ ở chế độ "tất cả ví") vẫn được liệt kê nhưng không cộng vào tổng và không làm đổi cột Số dư; phần ghi chú cuối sao kê nói rõ số lượng. Tương tự khi số dư ban đầu của một loại tiền không có tỷ giá.
 - Diễn giải của mỗi dòng: tên danh mục (đã dịch theo ngôn ngữ người dùng) + ghi chú, hoặc "Chuyển đến X" / "Nhận từ Y".
 - Cột "Ngày ghi nhận" là ngày giao dịch được nhập vào app (`createdAt`).
 
@@ -67,7 +68,7 @@ Bố cục lấy từ sao kê ngân hàng: số dư đầu kỳ, **ghi nợ** (t
 
 ## Cách vẽ PDF
 
-- Khổ **A4**, bố cục theo trang 1 mẫu sao kê Techcombank: logo FINANCIAL MANAGEMENT, tiêu đề, khối thông tin chủ tài khoản, bảng tóm tắt có viền, thanh "A. Thông tin chi tiết", bảng giao dịch, các dòng tổng, "Kết Thúc Sao Kê", chân trang có số trang.
+- Khổ **A4**, bố cục theo trang 1 mẫu sao kê Techcombank: logo FINANCIAL MANAGEMENT, tiêu đề, khối thông tin chủ tài khoản, bảng tóm tắt có viền, thanh "A. Thông tin chi tiết", bảng giao dịch (Ngày giao dịch · Ngày ghi nhận · Diễn giải · Ghi nợ · Ghi có · Số dư, dòng đầu là số dư đầu kỳ), các dòng tổng, "Kết Thúc Sao Kê", chân trang có số trang.
 - Nhãn **song ngữ** (tiếng Việt, tiếng Anh nghiêng bên dưới), nên một file dùng được cho cả hai ngôn ngữ giao diện.
 - Sang trang tự động: mỗi trang lặp lại thanh tiêu đề "(tiếp theo)" và các cột; chỉ trang cuối có "Kết Thúc Sao Kê". Dòng có diễn giải dài tự xuống dòng, không bị cắt.
 - **Font Noto Sans** (thường, đậm, nghiêng, giấy phép OFL) nhúng vào file, vì font có sẵn trong trình đọc PDF không đủ dấu tiếng Việt.
@@ -75,4 +76,4 @@ Bố cục lấy từ sao kê ngân hàng: số dư đầu kỳ, **ghi nợ** (t
 
 ## Kiểm thử
 
-Bộ `statement` (22 kiểm tra): đọc ngược chữ trong PDF bằng [tests/pdf-text.mjs](../tests/pdf-text.mjs) để kiểm từng con số (một ví, tất cả ví, chuyển khoản hai phía, giao dịch thiếu tỷ giá, nhiều trang, các từ chối, giới hạn mỗi giờ); `ui` (kiểm tra ngày trên form, tải file không bật lớp phủ chờ).
+Bộ `statement` (24 kiểm tra): đọc ngược chữ trong PDF bằng [tests/pdf-text.mjs](../tests/pdf-text.mjs) để kiểm từng con số (số dư đầu kỳ và số dư sau từng dòng, một ví, tất cả ví, chuyển khoản hai phía, giao dịch thiếu tỷ giá, nhiều trang, các từ chối, giới hạn mỗi giờ); `ui` (kiểm tra ngày trên form, tải file không bật lớp phủ chờ).

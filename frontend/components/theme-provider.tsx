@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
-import { THEME_CLASSES, THEME_COOKIE, type Theme } from "@/lib/theme";
+import { PREFERENCE_COOKIE_MAX_AGE, THEME_CLASSES, THEME_COOKIE, type Theme } from "@/lib/theme";
 
 type ThemeState = {
   theme: Theme;
@@ -27,7 +27,7 @@ export function ThemeProvider({ initial, children }: { initial: Theme; children:
   const deviceDark = useSyncExternalStore(subscribe, () => window.matchMedia(DARK_QUERY).matches, () => false);
 
   const setTheme = useCallback((next: Theme) => {
-    document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax`;
+    document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=${PREFERENCE_COOKIE_MAX_AGE}; samesite=lax`;
     const root = document.documentElement;
     for (const name of Object.values(THEME_CLASSES)) if (name) root.classList.remove(name);
     if (THEME_CLASSES[next]) root.classList.add(THEME_CLASSES[next]);

@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -14,15 +14,12 @@ try {
   const jarA = await registerUser(A, "User A");
   const jarB = await registerUser(B, "User B");
   const aId = (await one(`select id from users where email = $1`, [A])).id;
-  const sys = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-  const [food, salary, transport] = [await sys("food"), await sys("salary"), await sys("transport")];
+  const [food, salary, transport] = [await systemCategory("food"), await systemCategory("salary"), await systemCategory("transport")];
   const addCategory = async (name, parentId = null) =>
     (await one(`insert into categories (id,"userId",name,type,"parentId","updatedAt") values (gen_random_uuid()::text,$1,$2,'EXPENSE',$3,now()) returning id`, [aId, name, parentId])).id;
   const coffee = await addCategory("Cà phê", food);
-  const addAccount = async (name, currency, balance) =>
-    (await one(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,$2,'CASH',$3,$4,$4,now()) returning id`, [aId, name, currency, balance])).id;
-  const wallet = await addAccount("Ví", "VND", 2500000);
-  const usd = await addAccount("Đô", "USD", 120.5);
+  const wallet = await addAccount(aId, "Ví", "VND", 2500000);
+  const usd = await addAccount(aId, "Đô", "USD", 120.5);
   const addTx = (categoryId, amount, date, { type = "EXPENSE", account = wallet, currency = "VND", converted = amount, group = null, direction = null } = {}) =>
     db.query(
       `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,"transferGroupId","transferDirection","updatedAt")

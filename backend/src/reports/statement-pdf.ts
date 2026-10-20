@@ -1,13 +1,14 @@
 import { fileURLToPath } from "node:url";
 import type { Prisma } from "@fm/database";
-import { APP_TIME_ZONE } from "@fm/shared/dates";
+import { formatDate, formatDay, isoDateToText } from "@fm/shared/dates";
 import PDFDocument from "pdfkit";
-import type { Statement } from "./statement";
+import type { Statement, StatementRow } from "./statement";
 
 // Draws a Statement as an A4 PDF laid out like a bank's account statement: the holder and the period at
-// the top, a boxed summary, then every transaction with its debit or credit. The labels are bilingual
-// (Vietnamese, with the English below in italics), as on Vietnamese bank statements, so one file serves
-// both interface languages; category names follow the user's language.
+// the top, a boxed summary, then the opening balance and every transaction with its debit or credit and
+// the balance after it. The labels are bilingual (Vietnamese, with the English below in italics), as on
+// Vietnamese bank statements, so one file serves both interface languages; category names follow the
+// user's language.
 
 const FONTS = {
   regular: fontFile("NotoSans-Regular.ttf"),
@@ -78,13 +79,6 @@ function grouped(value: Prisma.Decimal, digits: number): string {
   );
 }
 
-function day(isoDate: string): string {
-  const [year, month, date] = isoDate.split("-");
-  return `${date}/${month}/${year}`;
-}
-const calendarDay = (date: Date) => day(date.toISOString().slice(0, 10));
-const localDay = (date: Date) => day(new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIME_ZONE }).format(date));
-
 // Shortens a one-line value with "…" so it fits `width` in the current font.
 function fit(doc: Doc, text: string, width: number): string {
   if (doc.widthOfString(text) <= width) return text;
@@ -126,8 +120,8 @@ function drawHolder(doc: Doc, s: Statement): number {
   drawField(doc, LEFT, y + 30, 248, "Email:", "Email", s.holder.email);
   const x = 314;
   const width = RIGHT - x;
-  drawField(doc, x, y, width, "Ngày sao kê:", "Statement date", localDay(s.createdAt));
-  drawField(doc, x, y + 30, width, "Kỳ sao kê:", "Statement period", `${day(s.from)} - ${day(s.to)}`);
+  drawField(doc, x, y, width, "Ngày sao kê:", "Statement date", formatDay(s.createdAt));
+  drawField(doc, x, y + 30, width, "Kỳ sao kê:", "Statement period", `${isoDateToText(s.from)} - ${isoDateToText(s.to)}`);
   drawField(doc, x, y + 60, width, "Tài khoản:", "Account", s.account ? s.account.name : "Tất cả tài khoản");
   drawField(doc, x, y + 90, width, "Loại tiền:", "Currency", s.currency);
   return y + 124;
@@ -166,17 +160,32 @@ function drawSummary(doc: Doc, s: Statement, top: number): number {
   return y + headHeight + valueHeight + 16;
 }
 
+// The columns of the details table, in this order: the money columns on the right, as bank statements
+// print them, and the description, which takes the width that is left, before them.
+const DESCRIPTION = 2;
+const DEBIT = 3;
+const CREDIT = 4;
+const BALANCE = 5;
+
 function columnsFor(s: Statement): Column[] {
   const columns: Column[] = [
     { vi: "Ngày giao dịch", en: "Transaction date", width: 62, align: "left" },
     { vi: "Ngày ghi nhận", en: "Recorded date", width: 62, align: "left" },
-    { vi: "Số tiền gốc", en: "Original amount", width: 92, align: "left" },
-    { vi: `Ghi nợ (${s.currency})`, en: "Debit", width: 74, align: "right" },
-    { vi: `Ghi có (${s.currency})`, en: "Credit", width: 74, align: "right" },
     { vi: "Diễn giải giao dịch", en: "Transaction description", width: 0, align: "left" },
+    { vi: `Ghi nợ (${s.currency})`, en: "Debit", width: 76, align: "right" },
+    { vi: `Ghi có (${s.currency})`, en: "Credit", width: 76, align: "right" },
+    { vi: `Số dư (${s.currency})`, en: "Balance", width: 84, align: "right" },
   ];
-  columns[columns.length - 1].width = WIDTH - columns.reduce((sum, column) => sum + column.width, 0);
+  columns[DESCRIPTION].width = WIDTH - columns.reduce((sum, column) => sum + column.width, 0);
   return columns;
+}
+
+// The description of a row; with all accounts, followed by the account and, when the account is in another
+// currency, the amount as it was recorded there.
+function describe(row: StatementRow, s: Statement): string {
+  const original = row.currency === s.currency ? null : `${grouped(row.amount, digitsOf(row.currency))} ${row.currency}`;
+  const extra = [row.accountName, original].filter(Boolean).join(", ");
+  return extra ? `${row.description} (${extra})` : row.description;
 }
 
 function columnX(columns: Column[], index: number): number {
@@ -202,41 +211,56 @@ function drawColumnHeads(doc: Doc, columns: Column[], top: number): number {
   return y;
 }
 
+// The details table: a first line with the opening balance, then every transaction with the balance after
+// it, as a bank statement runs; the last balance is the closing balance.
 function drawRows(doc: Doc, s: Statement, top: number): number {
   const columns = columnsFor(s);
   const digits = digitsOf(s.currency);
   let y = drawColumnHeads(doc, columns, drawSectionBar(doc, top, false));
-  const descriptionWidth = columns[5].width - 4;
+  const descriptionWidth = columns[DESCRIPTION].width - 4;
 
+  // One text per column, "" for an empty one. The description wraps; the other columns stay on one line.
+  const drawLine = (cells: string[], font: "regular" | "bold") => {
+    doc.font(font).fontSize(8);
+    const height = Math.max(doc.heightOfString(cells[DESCRIPTION], { width: descriptionWidth }), 11) + 12;
+    if (y + height > CONTENT_BOTTOM) {
+      doc.addPage();
+      y = drawColumnHeads(doc, columns, drawSectionBar(doc, TOP, true));
+      doc.font(font).fontSize(8);
+    }
+    doc.fillColor(INK);
+    cells.forEach((text, index) => {
+      if (!text) return;
+      const column = columns[index];
+      if (index === DESCRIPTION) {
+        doc.text(text, columnX(columns, index), y + 6, { width: descriptionWidth });
+        return;
+      }
+      const width = column.width - (column.align === "right" ? 6 : 4);
+      doc.text(fit(doc, text, width), columnX(columns, index), y + 6, { width, align: column.align, lineBreak: false });
+    });
+    y += height;
+    doc.lineWidth(0.4).strokeColor(HAIRLINE).moveTo(LEFT, y).lineTo(RIGHT, y).stroke();
+  };
+
+  drawLine([isoDateToText(s.from), "", "Số dư đầu kỳ (Opening balance)", "", "", grouped(s.opening, digits)], "bold");
   if (s.rows.length === 0) {
     doc.fillColor(MUTED).font("italic").fontSize(8.5);
     doc.text("Không có giao dịch nào trong kỳ này. No transactions in this period.", LEFT, y + 10, { width: WIDTH, align: "center" });
     y += 32;
   }
   for (const row of s.rows) {
-    doc.font("regular").fontSize(8);
-    const height = Math.max(doc.heightOfString(row.description, { width: descriptionWidth }), 11) + 12;
-    if (y + height > CONTENT_BOTTOM) {
-      doc.addPage();
-      y = drawColumnHeads(doc, columns, drawSectionBar(doc, TOP, true));
-      doc.font("regular").fontSize(8);
-    }
-    const cells = [
-      calendarDay(row.date),
-      localDay(row.recordedAt),
-      `${grouped(row.amount, 2)} ${row.currency}`,
-      row.debit ? grouped(row.debit, digits) : "",
-      row.credit ? grouped(row.credit, digits) : "",
-    ];
-    doc.fillColor(INK);
-    cells.forEach((text, index) => {
-      const column = columns[index];
-      const width = column.width - (column.align === "right" ? 6 : 4);
-      doc.text(fit(doc, text, width), columnX(columns, index), y + 6, { width, align: column.align, lineBreak: false });
-    });
-    doc.text(row.description, columnX(columns, 5), y + 6, { width: descriptionWidth });
-    y += height;
-    doc.lineWidth(0.4).strokeColor(HAIRLINE).moveTo(LEFT, y).lineTo(RIGHT, y).stroke();
+    drawLine(
+      [
+        formatDate(row.date),
+        formatDay(row.recordedAt),
+        describe(row, s),
+        row.debit ? grouped(row.debit, digits) : "",
+        row.credit ? grouped(row.credit, digits) : "",
+        grouped(row.balance, digits),
+      ],
+      "regular",
+    );
   }
   doc.lineWidth(0.6).strokeColor(RULE).moveTo(LEFT, y).lineTo(RIGHT, y).stroke();
   return y;
@@ -251,9 +275,9 @@ function notesFor(s: Statement): string[] {
     );
   } else {
     notes.push(
-      `Số liệu được quy về ${s.currency}: mỗi giao dịch theo tỷ giá tại ngày giao dịch, số dư ban đầu của các ví theo tỷ giá ngày ${day(s.from)}. ` +
+      `Số liệu được quy về ${s.currency}: mỗi giao dịch theo tỷ giá tại ngày giao dịch, số dư ban đầu của các ví theo tỷ giá ngày ${isoDateToText(s.from)}. ` +
         "Chuyển khoản giữa các ví của bạn xuất hiện ở cả hai phía. " +
-        `Amounts are in ${s.currency}: each transaction at the rate of its date, the accounts' opening amounts at the rate of ${day(s.from)}. ` +
+        `Amounts are in ${s.currency}: each transaction at the rate of its date, the accounts' opening amounts at the rate of ${isoDateToText(s.from)}. ` +
         "Transfers between your own accounts appear on both sides.",
     );
   }
@@ -284,25 +308,22 @@ function drawTotals(doc: Doc, s: Statement, top: number) {
     y = TOP;
   }
 
-  const totalLine = (vi: string, en: string, value: string, column: number | null) => {
+  // A total, its value under the column it sums.
+  const totalLine = (vi: string, en: string, value: string, column: number) => {
     doc.fillColor(INK).font("bold").fontSize(10).text(`${vi} `, LEFT, y, { continued: true, lineBreak: false });
-    doc.font("italic").fontSize(7.5).fillColor(MUTED).text(en, { continued: column === null, lineBreak: false });
+    doc.font("italic").fontSize(7.5).fillColor(MUTED).text(en, { lineBreak: false });
     doc.font("bold").fontSize(9).fillColor(INK);
-    if (column === null) {
-      doc.text(` ${value}`, { lineBreak: false });
-    } else {
-      const width = columns[column].width - 6;
-      doc.text(value, columnX(columns, column), y + 1, { width, align: "right", lineBreak: false });
-    }
+    const width = columns[column].width - 6;
+    doc.text(value, columnX(columns, column), y + 1, { width, align: "right", lineBreak: false });
     y += 18;
   };
-  totalLine("Tổng ghi nợ trong kỳ", "Total Debit in Period:", grouped(s.debit, digits), 3);
+  totalLine("Tổng ghi nợ trong kỳ", "Total Debit in Period:", grouped(s.debit, digits), DEBIT);
   doc.lineWidth(0.5).strokeColor(RULE).moveTo(LEFT, y - 3).lineTo(RIGHT, y - 3).stroke();
   y += 3;
-  totalLine("Tổng ghi có trong kỳ", "Total Credit in Period:", grouped(s.credit, digits), 4);
+  totalLine("Tổng ghi có trong kỳ", "Total Credit in Period:", grouped(s.credit, digits), CREDIT);
   doc.lineWidth(0.5).strokeColor(RULE).moveTo(LEFT, y - 3).lineTo(RIGHT, y - 3).stroke();
   y += 3;
-  totalLine("Số dư cuối kỳ", "Closing Balance:", `${grouped(s.closing, digits)} ${s.currency}`, null);
+  totalLine("Số dư cuối kỳ", "Closing Balance:", grouped(s.closing, digits), BALANCE);
 
   y += 4;
   doc.font("italic").fontSize(7.5).fillColor(MUTED);
@@ -348,7 +369,7 @@ export function renderStatementPdf(s: Statement): Promise<Buffer> {
     margins: { top: TOP, left: LEFT, right: LEFT, bottom: 60 },
     bufferPages: true,
     info: {
-      Title: `Sao kê tài khoản ${day(s.from)} - ${day(s.to)}`,
+      Title: `Sao kê tài khoản ${isoDateToText(s.from)} - ${isoDateToText(s.to)}`,
       Author: s.holder.name,
       Creator: "Financial Management",
       Producer: "Financial Management",

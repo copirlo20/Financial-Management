@@ -1,6 +1,6 @@
 import type Decimal from "decimal.js";
 import { formatMoney } from "@fm/shared/currencies";
-import { isoDateToDate, todayIsoDate } from "@fm/shared/dates";
+import { daysBetween, isoDateToDate, todayIsoDate } from "@fm/shared/dates";
 import type { Translate } from "@fm/shared/i18n/translate";
 import type { SavingsGoalStatus } from "@fm/shared/labels";
 
@@ -19,7 +19,7 @@ export function goalProgress(goal: GoalNumbers, t: Translate, locale: string) {
 
   let deadlineNote: string | null = null;
   if (goal.deadline && !reached && goal.status === "IN_PROGRESS") {
-    const days = Math.round((goal.deadline.getTime() - isoDateToDate(todayIsoDate()).getTime()) / 86_400_000);
+    const days = daysBetween(isoDateToDate(todayIsoDate()), goal.deadline);
     if (days < 0) {
       deadlineNote = t("Đã quá hạn {0} ngày", -days);
     } else {

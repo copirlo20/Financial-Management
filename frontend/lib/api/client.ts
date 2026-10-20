@@ -12,6 +12,7 @@ import {
 } from "@fm/shared/wire";
 import { authCookies, clearedAuthCookies } from "@/lib/auth/cookies";
 import { getI18n, getLanguage } from "@/lib/i18n/server";
+import { PREFERENCE_COOKIE_MAX_AGE } from "@/lib/theme";
 import { BACKEND_URL } from "./backend-url";
 import { BackendConnectionError, fetchBackend } from "./retry";
 import { decode } from "./wire";
@@ -96,7 +97,7 @@ async function finish<State>(response: Response, what: string): Promise<State> {
     for (const cookie of result.tokens ? authCookies(result.tokens) : clearedAuthCookies()) cookieStore.set(cookie);
   }
   if (result.locale) {
-    cookieStore.set(LOCALE_COOKIE, result.locale, { path: "/", maxAge: 365 * 24 * 60 * 60, sameSite: "lax" });
+    cookieStore.set(LOCALE_COOKIE, result.locale, { path: "/", maxAge: PREFERENCE_COOKIE_MAX_AGE, sameSite: "lax" });
   }
   revalidatePath("/", "layout");
   if (result.redirect) redirect(result.redirect);
@@ -105,13 +106,19 @@ async function finish<State>(response: Response, what: string): Promise<State> {
 
 type Method = "POST" | "PUT" | "DELETE";
 
+// The fields the person filled in: files travel separately (see upload), and "$ACTION…" fields are
+// Next.js bookkeeping.
+function textFields(formData?: FormData): [string, string][] {
+  const fields: [string, string][] = [];
+  for (const [name, value] of formData?.entries() ?? []) {
+    if (typeof value === "string" && !name.startsWith("$ACTION")) fields.push([name, value]);
+  }
+  return fields;
+}
+
 // Sends a submitted form to a backend route that changes something. Call it from a Server Action.
 export async function command<State = void>(method: Method, path: string, formData?: FormData): Promise<State> {
-  const body: CommandBody = { fields: [] };
-  for (const [name, value] of formData?.entries() ?? []) {
-    // Files travel separately (see upload); "$ACTION…" fields are Next.js bookkeeping.
-    if (typeof value === "string" && !name.startsWith("$ACTION")) body.fields.push([name, value]);
-  }
+  const body: CommandBody = { fields: textFields(formData) };
   const headers: Record<string, string> = { "content-type": "application/json" };
   // Signing out has to name the session to end.
   if (path === "/auth/logout") {
@@ -146,11 +153,8 @@ async function answerOnForm<State extends MessageState>(send: Promise<State>, fo
     if (!(error instanceof BackendConnectionError)) throw error;
     console.error(error);
     const { t } = await getI18n();
-    const values: Record<string, string> = {};
     // Passwords are never sent back to the page, as the backend never does either.
-    for (const [name, value] of formData?.entries() ?? []) {
-      if (typeof value === "string" && !name.startsWith("$ACTION") && !/password/i.test(name)) values[name] = value;
-    }
+    const values = Object.fromEntries(textFields(formData).filter(([name]) => !/password/i.test(name)));
     const message = error.mayHaveRun
       ? t("Mất kết nối tới máy chủ khi đang lưu. Thay đổi có thể đã được lưu hoặc chưa, hãy kiểm tra lại trước khi gửi lại.")
       : t("Không kết nối được máy chủ nên chưa có gì thay đổi. Hãy thử lại sau giây lát.");

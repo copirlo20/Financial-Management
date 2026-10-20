@@ -1,4 +1,4 @@
-import { BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf, removeUsers } from "../harness.mjs";
+import { BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf, removeUsers, addAccount, systemCategory } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -40,13 +40,10 @@ try {
   check("language chosen before sign-up is saved to the profile", (await one(`select locale from users where id = $1`, [aId])).locale === "en");
 
   // Seed data with ASCII-only user text so any Vietnamese left on a page is an untranslated UI string.
-  const sys = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-  const [food, salary] = [await sys("food"), await sys("salary")];
-  const addAccount = async (uid, name, currency, balance) =>
-    (await one(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,$2,'BANK',$3,$4,$4,now()) returning id`, [uid, name, currency, balance])).id;
-  const wallet = await addAccount(aId, "Main", "VND", 5000000);
-  const dollars = await addAccount(aId, "Dollars", "USD", 300);
-  await addAccount(aId, "Old one", "VND", 0).then((id) => db.query(`update accounts set "archivedAt" = now() where id = $1`, [id]));
+  const [food, salary] = [await systemCategory("food"), await systemCategory("salary")];
+  const wallet = await addAccount(aId, "Main", "VND", 5000000, "BANK");
+  const dollars = await addAccount(aId, "Dollars", "USD", 300, "BANK");
+  await addAccount(aId, "Old one", "VND", 0, "BANK").then((id) => db.query(`update accounts set "archivedAt" = now() where id = $1`, [id]));
 
   html = await page("/transactions", jarA);
   const txForm = formWith(html, 'id="tx-amount"');
@@ -174,7 +171,7 @@ try {
   // ================= Changing the default currency =================
   const jarB = readCookies(await submit("/register", formWith(await page("/register"), 'name="confirmPassword"'), { name: "Bo", email: B, password: "abc12345", confirmPassword: "abc12345" }, {}), {});
   const bId = (await one(`select id from users where email = $1`, [B])).id;
-  const bWallet = await addAccount(bId, "B wallet", "VND", 0);
+  const bWallet = await addAccount(bId, "B wallet", "VND", 0, "BANK");
   await db.query(`insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency","exchangeRateUsed",date,"updatedAt") values (gen_random_uuid()::text,$1,$2,$3,'EXPENSE',70000,'VND',70000,1,$4::date,now())`, [bId, bWallet, food, TODAY]);
   const before = (await db.query(`select id, "updatedAt" from transactions where "userId" = $1`, [aId])).rows;
   const liveRate = await usdVnd();

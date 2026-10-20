@@ -309,6 +309,8 @@ Xem [import-flow.md](import-flow.md). Mã: `backend/src/imports/`, `backend/src/
        → một tiêu đề hay dòng tổng trải ngang không làm dính hai cột
    ô nằm ngoài mọi dải (cột hiếm khi có số, như tiền vào của sao kê thẻ) → dải riêng, không bị dồn sang cột bên cạnh
    mỗi ô vào dải nó chồng lên nhiều nhất; hai ô cùng dải thì nối bằng khoảng trắng
+       ô chạm vào một dải của dòng giao dịch thì chỉ xét các dải đó: tên cột rộng hơn số tiền bên dưới
+       ("Ghi nợ (USD)" trên "20.50") không bị dải riêng của khối thông tin phía trên giành mất
 5. Dòng nối tiếp: dòng ngay dưới (cách ≤ 1,6 × cỡ chữ, cùng trang), không có ngày và không có số tiền
        → nối vào dòng trên theo từng cột (diễn giải xuống dòng, tên cột viết hai dòng)
 6. Giữ mọi dòng tới dòng giao dịch đầu tiên (phần đầu, nơi có tên cột);
@@ -508,9 +510,15 @@ Xem [statement-flow.md](statement-flow.md). Mã: `backend/src/reports/`.
    rồi cộng: với mỗi nhóm (type, transferDirection) của giao dịch TRƯỚC ngày bắt đầu: ± Σ số tiền
              (dùng amount nếu một ví, amountInDefaultCurrency nếu tất cả)
 các dòng: giao dịch trong kỳ, sắp (date, createdAt) tăng; lấy tối đa 3.000 + 1 để PHÁT HIỆN vượt giới hạn mà không tải hết
-mỗi dòng: thu/nhận chuyển → cột Ghi có;  chi/chuyển đi → cột Ghi nợ;  chưa có bản chụp (chế độ tất cả) → không vào cột nào
-cuối_kỳ = đầu_kỳ + Σ ghi_có − Σ ghi_nợ
+số_dư := đầu_kỳ                              (dòng đầu bảng chi tiết: "Số dư đầu kỳ")
+mỗi dòng: thu/nhận chuyển → cột Ghi có, số_dư += giá trị
+          chi/chuyển đi   → cột Ghi nợ, số_dư −= giá trị
+          chưa có bản chụp (chế độ tất cả) → không vào cột nào, số_dư giữ nguyên
+          cột Số dư của dòng = số_dư sau dòng đó
+cuối_kỳ = số_dư sau dòng cuối = đầu_kỳ + Σ ghi_có − Σ ghi_nợ
 ```
+
+Cột **Số dư** chạy như sao kê ngân hàng: bắt đầu từ số dư đầu kỳ, mỗi giao dịch đẩy nó lên hoặc xuống, và số dư của dòng cuối chính là số dư cuối kỳ. Ở chế độ tất cả ví, dòng của ví khác tiền tệ ghi thêm số tiền gốc trong ngoặc ở diễn giải, ví dụ `(Đô la, 10.00 USD)`.
 
 Số dư đầu kỳ dùng **phép tính từ gốc** (số dư ban đầu + mọi giao dịch trước đó) chứ không đọc ngược từ số dư hiện tại, nên đúng cho mọi kỳ.
 

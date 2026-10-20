@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers, addAccount } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -6,11 +6,6 @@ const RATE_DATE = "2001-01-01";
 
 await db.connect();
 
-async function addAccount(uid, name, currency, balance) {
-  return (await one(
-    `insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt")
-     values (gen_random_uuid()::text,$1,$2,'CASH',$3,$4,$4,now()) returning id`, [uid, name, currency, balance])).id;
-}
 const balance = async (id) => (await one(`select "currentBalance" b from accounts where id = $1`, [id])).b;
 const nearestRate = async (date) => Number((await one(`select rate from exchange_rates where "baseCurrency" = 'USD' and "quoteCurrency" = 'VND' order by (date > $1::date), abs(date - $1::date) limit 1`, [date])).rate);
 const sameMoney = (actual, expected) => Math.abs(Number(actual) - expected) < 0.011;

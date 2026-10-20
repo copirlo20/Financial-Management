@@ -3,6 +3,7 @@ import { Prisma, prisma } from "@fm/database";
 import { isoDateToDate } from "@fm/shared/dates";
 import { formText, type FormState } from "@fm/shared/form-state";
 import { requireUser } from "../auth/current-user";
+import { sameName } from "../data/names";
 import { redirect } from "../http/respond";
 import { getI18n } from "../i18n";
 import { MAX_SAVINGS_GOALS_PER_USER } from "../limits";
@@ -18,15 +19,7 @@ type Tx = Prisma.TransactionClient;
 const NOT_FOUND_MESSAGE = "Không tìm thấy mục tiêu.";
 
 async function isNameTaken(userId: string, name: string, exceptId?: string): Promise<boolean> {
-  const existing = await prisma.savingsGoal.findFirst({
-    where: {
-      userId,
-      name: { equals: name, mode: "insensitive" },
-      ...(exceptId ? { id: { not: exceptId } } : {}),
-    },
-    select: { id: true },
-  });
-  return existing !== null;
+  return (await prisma.savingsGoal.findFirst({ where: { userId, ...sameName(name, exceptId) }, select: { id: true } })) !== null;
 }
 
 // One statement moves the cached total and re-derives COMPLETED / IN_PROGRESS from it, so concurrent

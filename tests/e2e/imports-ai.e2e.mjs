@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx, removeUsers, importFilePath } from "../harness.mjs";
+import { STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx, removeUsers, importFilePath, addAccount, systemCategory } from "../harness.mjs";
 
 // Importing with the AI assistant. The AI API is replaced by tests/mock-ai.mjs, which the
 // runner starts and the app is pointed at; this suite queues the assistant's answers and reads back
@@ -21,16 +21,10 @@ const sent = async () => (await fetch(`${MOCK}/__mock/requests`)).json();
 
 await db.connect();
 
-async function addAccount(uid, name, balance) {
-  return (await one(
-    `insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt")
-     values (gen_random_uuid()::text,$1,$2,'BANK','VND',$3,$3,now()) returning id`, [uid, name, balance])).id;
-}
 const balance = async (id) => (await one(`select "currentBalance" b from accounts where id = $1`, [id])).b;
 const batchOf = (id) => one(`select * from import_batches where id = $1`, [id]);
 const txCount = async (accountId) => (await one(`select count(*)::int n from transactions where "accountId" = $1`, [accountId])).n;
 const batchCount = async (uid) => (await one(`select count(*)::int n from import_batches where "userId" = $1`, [uid])).n;
-const systemCategory = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
 const importedRows = async (batchId) =>
   (await db.query(`select t.*, c."systemKey" from transactions t join categories c on c.id = t."categoryId" where t."importBatchId" = $1 order by t.date, t.amount`, [batchId])).rows;
 
@@ -57,8 +51,8 @@ try {
   const jarB = await registerUser(B, "User B");
   const aId = await userId(A);
   const bId = await userId(B);
-  const bank = await addAccount(aId, "Bank", 1000000);
-  const bank2 = await addAccount(aId, "Bank 2", 0);
+  const bank = await addAccount(aId, "Bank", "VND", 1000000);
+  const bank2 = await addAccount(aId, "Bank 2", "VND", 0);
   const transport = await systemCategory("transport");
   const food = await systemCategory("food");
   const salary = await systemCategory("salary");

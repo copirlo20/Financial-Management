@@ -134,6 +134,7 @@ Các cây ở mục 4–15 chỉ ghi tên những hàm này, không mở rộng 
 | `convertBalances(balances, target)` | `exchange.ts` | Cộng số dư nhiều loại tiền về một loại | ⇒ `{ total, missing: [mã tiền thiếu tỷ giá] }` |
 | `recomputeConversions(db, { userId?, onlyMissing })` | `exchange.ts` | Một câu `UPDATE "transactions" … FROM (…)` tính lại `amountInDefaultCurrency`, `exchangeRateUsed` | |
 | `getTransactionOptions(userId)` | `data/transaction-options.ts` | `accounts.findMany` + `categories.findMany` (của mình và hệ thống), dựng nhãn "Cha › Con" | ⇒ `{ accounts, categoryOptions }` |
+| `sameName(name, exceptId?)` | `data/names.ts` | Phần `where` tìm bản ghi khác **trùng tên** (không phân biệt hoa thường, trừ bản ghi đang sửa); các hàm `isNameTaken` của ví, mục tiêu tiết kiệm, danh mục, danh mục hệ thống ghép nó với điều kiện riêng | |
 | `getMonthReport(userId, month)` | `data/reports.ts` | `transactions.groupBy` theo loại và danh mục, đếm giao dịch chưa quy đổi, `categories.findMany`, `accounts.groupBy` theo tiền tệ | ⇒ `{ income, expense, net, expenseByCategory (≤ 7 cột + "Khác"), unconvertedCount, balances }` |
 | `getMonthlyTrend(userId, endMonth, months)` | `data/reports.ts` | `$queryRaw` gom theo `to_char(date,'YYYY-MM')`, lấp tháng trống bằng 0 | ⇒ `[{ month, income, expense }]` |
 | `getBudgetStatuses(userId, month)` | `data/budgets.ts` | `budgets.findMany`, `transactions.groupBy` chi theo danh mục, đếm chưa quy đổi, danh mục con; ngân sách của danh mục cha tính cả con | ⇒ `{ statuses: [{ id, categoryId, name, icon, color, currency, limit, spent, percent, state: ok/near/over }], unconvertedCount }` |
@@ -533,6 +534,8 @@ Hàm nội bộ của `handlers/transactions.ts` dùng ở dưới:
 | `lockTransactionRows(tx, userId, id)` | `$queryRaw SELECT … FOR UPDATE` giao dịch và cặp chuyển khoản của nó, rồi `tx.transaction.findMany` |
 | `findCategory(db, userId, id, type)` | `category.findFirst` của mình hoặc hệ thống, đúng loại |
 | `transactionValues(formData)` | `formText()` cho type, accountId, categoryId, amount, date, note |
+| `parseEntry(values)` | `transactionSchema` rồi đổi số tiền sang `Prisma.Decimal`, ngày sang `Date`: `{ ok: true, entry }` hoặc `{ ok: false, errors }` |
+| `entryData(entry, account, categoryId, conversion)` | Các cột ghi vào `transactions` (tiền tệ lấy theo ví), dùng chung cho tạo và sửa |
 
 ### `GET /api/transactions?accountId&categoryId&type&from&to&page`
 
@@ -568,16 +571,17 @@ views/transactions.ts › transactionView(transactionId)
 handlers/transactions.ts › createTransaction(_prev, formData)
 ├─ requireUser()
 ├─ transactionValues(formData)
-├─ validations/transaction.ts › transactionSchema.safeParse()
-│   amountField (chuỗi, > 0), dateField (dateText → z.iso.date → 2000–2100), noteField (≤ 200)   ✗ → { errors, values }
-├─ new Prisma.Decimal(amount), isoDateToDate(date)
+├─ parseEntry(values)
+│   ├─ validations/transaction.ts › transactionSchema.safeParse()
+│   │   amountField (chuỗi, > 0), dateField (dateText → z.iso.date → 2000–2100), noteField (≤ 200)   ✗ → { errors, values }
+│   └─ new Prisma.Decimal(amount), isoDateToDate(date)   ⇒ entry
 ├─ Promise.all
 │   ├─ ⤷ DB accounts: findFirst({ id, userId, archivedAt: null })   ✗ → { errors: { accountId } }
 │   └─ findCategory(prisma, …)                                      ✗ → { errors: { categoryId } }
 ├─ tiền của ví ≠ tiền mặc định → exchange.ts › refreshRates()
 ├─ exchange.ts › convertToDefaultCurrency(prisma, amount, account.currency, defaultCurrency, date)
 └─ prisma.$transaction
-    ├─ ⤷ DB transactions: create (kèm amountInDefaultCurrency, exchangeRateUsed)
+    ├─ ⤷ DB transactions: create (entryData(entry, account, categoryId, conversion))
     └─ adjustBalance(tx, user.id, account.id, signedAmount(created))
 ⇒ { success: true }
 ```
@@ -589,7 +593,7 @@ handlers/transactions.ts › createTransaction(_prev, formData)
 ```text
 handlers/transactions.ts › updateTransaction(transactionId, _prev, formData)
 ├─ requireUser(), idSchema.safeParse()                    ✗ → { message: "Không tìm thấy giao dịch." }
-├─ transactionSchema.safeParse()                          ✗ → { errors }
+├─ parseEntry(transactionValues(formData))                ✗ → { errors }
 ├─ exchange.ts › refreshRates()
 └─ prisma.$transaction
     ├─ lockTransactionRows(tx, user.id, id)               ✗ không có hoặc là TRANSFER → { message }
@@ -597,7 +601,7 @@ handlers/transactions.ts › updateTransaction(transactionId, _prev, formData)
     ├─ findCategory(tx, …)                                ✗ → { errors: { categoryId } }
     ├─ convertToDefaultCurrency(tx, …)
     ├─ adjustBalance(ví cũ, −signedAmount(cũ))
-    ├─ ⤷ DB transactions: update
+    ├─ ⤷ DB transactions: update (entryData(…))
     └─ adjustBalance(ví mới, +signedAmount(mới))
 └─ redirect("/transactions")
 ```
@@ -862,13 +866,13 @@ routes.ts › router.get("/reports/statement", async (req, res) => …)
 │   │  mọi ví: ⤷ DB accounts: groupBy currency _sum initialBalance → exchange.ts › exchangeRate() mỗi loại tiền
 │   ├─ mọi ví: ⤷ DB transactions: count chưa quy đổi
 │   ├─ có chuyển khoản → ⤷ DB transactions: findMany vế còn lại ("Chuyển đến X" / "Nhận từ Y")
-│   └─ tính debit, credit (@fm/shared/transactions › isInflow), closing = opening + credit − debit
+│   └─ mỗi dòng: debit hoặc credit (@fm/shared/transactions › isInflow) và balance = số dư sau dòng đó (bắt đầu từ opening); closing = balance sau dòng cuối
 │   ⇒ Statement { holder, createdAt, from, to, account, currency, opening, debit, credit, closing, rows, unconverted, missingRates }
 ├─ reports/statement-pdf.ts › renderStatementPdf(statement)
 │   ├─ new PDFDocument (pdfkit, A4), registerFont Noto Sans (backend/assets/fonts/)
 │   ├─ keepLettersWhole(doc)                               chuẩn hóa NFC, tắt ccmp: chữ tiếng Việt chép và tìm kiếm được
 │   ├─ drawBrand → drawTitle → drawHolder → drawSummary
-│   ├─ drawRows (columnsFor, drawSectionBar, drawColumnHeads, sang trang khi đầy)
+│   ├─ drawRows: dòng "Số dư đầu kỳ", rồi mỗi giao dịch (describe, columnsFor, drawSectionBar, drawColumnHeads, sang trang khi đầy)
 │   ├─ drawTotals (notesFor)
 │   └─ drawFooters                                         chân trang, số trang "n/N", dòng "Kết Thúc Sao Kê" ở trang cuối
 │   ⇒ Promise<Buffer>

@@ -14,6 +14,11 @@ export function dateToIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Whole days from one calendar date to another (negative when `to` is earlier).
+export function daysBetween(from: Date, to: Date): number {
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000);
+}
+
 // Every date the app shows reads dd/mm/yyyy, whatever the language. Calendar dates are stored as UTC
 // midnight, so they are read in UTC; a moment in time (when something was created) is read in APP_TIME_ZONE.
 function dayMonthYear(date: Date, timeZone: string): string {

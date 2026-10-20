@@ -25,7 +25,7 @@ E2E_PORT=3300 npm test            # đổi cổng nếu 3101 đang bị chiếm
 | `budgets`                    |    37    | Ngân sách theo tháng, cảnh báo 80% / vượt, sao chép tháng trước                                                                                                           |
 | `savings`                    |    35    | Mục tiêu, gửi / rút, tiến độ, lưu trữ                                                                                                                                     |
 | `dashboard`                  |    15    | Tổng hợp thu chi, danh mục, xu hướng, quy đổi                                                                                                                             |
-| `statement`                  |    22    | Sao kê PDF: số dư đầu/cuối kỳ, ghi nợ/có, một ví và tất cả, nhiều trang, từ chối, giới hạn mỗi giờ                                                                        |
+| `statement`                  |    24    | Sao kê PDF: số dư đầu/cuối kỳ, cột số dư chạy, ghi nợ/có, một ví và tất cả, nhiều trang, từ chối, giới hạn mỗi giờ                                                                        |
 | `language-currency`          |    49    | Việt / Anh, quy đổi tiền tệ, tỷ giá nhập tay của admin                                                                                                                    |
 | `imports`                    |    75    | PDF (dựng lại bảng, nhiều trang, mật khẩu, scan, chữ ngoài trang, sao kê do app xuất) / Excel, CSV bị từ chối, ghép cột, chống trùng, hoàn tác, xóa lần nhập           |
 | `imports-ai`                 |    52    | Đọc sao kê bằng AI (máy chủ giả), PDF, chia phần, xử lý lỗi, PDF có chữ chuyển sang ghép cột tay khi AI lỗi                                                               |
@@ -37,7 +37,7 @@ E2E_PORT=3300 npm test            # đổi cổng nếu 3101 đang bị chiếm
 | `mobile`                     |    30    | Trình duyệt giả lập điện thoại: bố cục 320–740 px, thao tác chạm, bàn phím ảo                                                                                             |
 | `imports-ai` (openai)        |    50    | Bộ `imports-ai` chạy lại với bản app dùng OpenAI                                                                                                                          |
 | `chat` (openai)              |    35    | Bộ `chat` chạy lại với bản app dùng OpenAI                                                                                                                                |
-|                              | **703**  |                                                                                                                                                                           |
+|                              | **705**  |                                                                                                                                                                           |
 
 Hai bộ cuối cần **Edge hoặc Chrome**; không có trình duyệt thì chúng tự bỏ qua (đặt `E2E_BROWSER` nếu trình duyệt ở chỗ khác).
 
@@ -66,5 +66,5 @@ Hai loại bộ: `tests/e2e/*.e2e.mjs` gọi qua HTTP như trình duyệt không
 
 Trình duyệt giả lập đôi khi treo khi trang bị đánh dấu "ẩn" (`visibilityState = hidden`); chạy lại, và xem các dòng `at abort:` trong kết quả để biết nó dừng ở đâu.
 
-Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận. Lấy phần dùng chung từ `tests/harness.mjs` (`check`, `report`, `page`, `formWith`, `submit`, `formDefaults`, `registerUser`, `statementPdf` và `statementXlsx` dựng file sao kê, `db`, `one`, `importFilePath`…; bộ trình duyệt thêm `browserCookies`), kết nối database bằng `await db.connect()`. Trong `finally`, xóa người dùng của bộ bằng `removeUsers([...emails])` (xóa luôn file sao kê còn chờ xác nhận của họ), rồi đóng kết nối; kết thúc file bằng `report()`.
+Thêm một bộ kiểm thử mới: xem bước 5 của "Thêm một tính năng" ở [STRUCTURE.md](STRUCTURE.md); đặt file vào `tests/e2e/<tên>.e2e.mjs` và trình chạy tự nhận. Lấy phần dùng chung từ `tests/harness.mjs` (`check`, `report`, `page`, `formWith`, `submit`, `formDefaults`, `registerUser`, `statementPdf` và `statementXlsx` dựng file sao kê, `db`, `one`, `importFilePath`, `addAccount` và `systemCategory` dựng sẵn dữ liệu thẳng trong database…; bộ trình duyệt thêm `browserCookies`), kết nối database bằng `await db.connect()`. Trong `finally`, xóa người dùng của bộ bằng `removeUsers([...emails])` (xóa luôn file sao kê còn chờ xác nhận của họ), rồi đóng kết nối; kết thúc file bằng `report()`.
 

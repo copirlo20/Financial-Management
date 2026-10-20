@@ -3,6 +3,7 @@ import type { CategoryType } from "@fm/database";
 import { prisma } from "@fm/database";
 import { formText, type FormState } from "@fm/shared/form-state";
 import { requireUser } from "../auth/current-user";
+import { sameName } from "../data/names";
 import { redirect } from "../http/respond";
 import { getI18n } from "../i18n";
 import { MAX_CATEGORIES_PER_USER } from "../limits";
@@ -15,17 +16,9 @@ export type DeleteCategoryState = { message: string } | undefined;
 const NOT_FOUND_MESSAGE = "Không tìm thấy danh mục.";
 
 // Checks the user's own categories and the shared system ones, since both appear in the same pickers.
-async function isNameTaken(userId: string, type: CategoryType, name: string, exceptId?: string) {
-  const existing = await prisma.category.findFirst({
-    where: {
-      type,
-      name: { equals: name, mode: "insensitive" },
-      OR: [{ userId }, { userId: null }],
-      ...(exceptId ? { id: { not: exceptId } } : {}),
-    },
-    select: { id: true },
-  });
-  return existing !== null;
+async function isNameTaken(userId: string, type: CategoryType, name: string, exceptId?: string): Promise<boolean> {
+  const where = { type, OR: [{ userId }, { userId: null }], ...sameName(name, exceptId) };
+  return (await prisma.category.findFirst({ where, select: { id: true } })) !== null;
 }
 
 // A parent must be visible to the user (own or system), top-level (one nesting level only) and of the same type.

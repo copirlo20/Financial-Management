@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { crc32, deflateRawSync } from "node:zlib";
-import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, removeUsers, importFilePath } from "../harness.mjs";
+import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, removeUsers, importFilePath, addAccount } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");
@@ -13,11 +13,6 @@ const B = `e2e-b-${STAMP}@example.com`;
 // Reads the values the server pre-selected in the mapping form (i.e. the auto-detected mapping).
 await db.connect();
 
-async function addAccount(uid, name, currency, balance) {
-  return (await one(
-    `insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt")
-     values (gen_random_uuid()::text,$1,$2,'BANK',$3,$4,$4,now()) returning id`, [uid, name, currency, balance])).id;
-}
 const balance = async (id) => (await one(`select "currentBalance" b from accounts where id = $1`, [id])).b;
 const batchOf = (id) => one(`select * from import_batches where id = $1`, [id]);
 const txCount = async (accountId) => (await one(`select count(*)::int n from transactions where "accountId" = $1`, [accountId])).n;

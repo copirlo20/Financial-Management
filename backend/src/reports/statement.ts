@@ -19,12 +19,18 @@ import type { StatementQuery } from "../validations/report";
 export type StatementRow = {
   date: Date;
   recordedAt: Date;
+  // As recorded, in the account's currency; shown when that is not the statement's currency (all accounts).
   amount: Prisma.Decimal;
   currency: string;
   // In the statement's currency; both null for a transaction that has no exchange rate yet (all accounts only).
   debit: Prisma.Decimal | null;
   credit: Prisma.Decimal | null;
+  // The balance after this row: the opening balance moved by every row up to here. A row without an
+  // exchange rate leaves it as it was, like the totals.
+  balance: Prisma.Decimal;
   description: string;
+  // All accounts only: which account the row belongs to.
+  accountName: string | null;
 };
 
 export type Statement = {
@@ -123,12 +129,18 @@ export async function buildStatement(user: CurrentUser, query: StatementQuery): 
 
   let debit = ZERO;
   let credit = ZERO;
+  let balance = opening;
   const statementRows = rows.map((row): StatementRow => {
     const value = account ? row.amount : row.amountInDefaultCurrency;
     const inflow = isInflow(row);
     if (value) {
-      if (inflow) credit = credit.plus(value);
-      else debit = debit.plus(value);
+      if (inflow) {
+        credit = credit.plus(value);
+        balance = balance.plus(value);
+      } else {
+        debit = debit.plus(value);
+        balance = balance.minus(value);
+      }
     }
     const title =
       row.type === "TRANSFER"
@@ -138,7 +150,6 @@ export async function buildStatement(user: CurrentUser, query: StatementQuery): 
         : row.category
           ? t(row.category.name)
           : t("Chưa phân loại");
-    const parts = [title, row.note?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" - ");
     return {
       date: row.date,
       recordedAt: row.createdAt,
@@ -146,7 +157,9 @@ export async function buildStatement(user: CurrentUser, query: StatementQuery): 
       currency: row.currency,
       debit: value && !inflow ? value : null,
       credit: value && inflow ? value : null,
-      description: account ? parts : `${parts} (${row.account.name})`,
+      balance,
+      description: [title, row.note?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" - "),
+      accountName: account ? null : row.account.name,
     };
   });
 
@@ -160,7 +173,7 @@ export async function buildStatement(user: CurrentUser, query: StatementQuery): 
     opening,
     debit,
     credit,
-    closing: opening.plus(credit).minus(debit),
+    closing: balance,
     rows: statementRows,
     unconverted,
     missingRates,

@@ -67,7 +67,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `src/handlers/` | Thao tác **ghi** (tạo, sửa, xóa), mỗi file một nhóm nghiệp vụ |
 | `src/views/` | Truy vấn **đọc** cho từng trang |
 | `src/auth/` | Băm mật khẩu, JWT, refresh token và phiên, người dùng hiện tại, giới hạn đăng nhập (`throttle.ts`) |
-| `src/data/` | Truy vấn dùng chung: tổng hợp báo cáo, trạng thái ngân sách, lựa chọn cho form |
+| `src/data/` | Truy vấn dùng chung: tổng hợp báo cáo, trạng thái ngân sách, lựa chọn cho form, điều kiện trùng tên (`names.ts`) |
 | `src/exchange.ts` | Tỷ giá, quy đổi, tính lại bản chụp quy đổi |
 | `src/reports/` | Sao kê PDF: `statement.ts` tính số liệu, `statement-pdf.ts` vẽ bằng `pdfkit` |
 | `src/imports/` | Đọc Excel, dựng lại bảng từ PDF (`parse-pdf.ts`), chống "zip bomb", ghép cột, lưu file tạm, file mẫu, đọc bằng AI |

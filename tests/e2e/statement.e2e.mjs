@@ -1,5 +1,5 @@
 import { pdfText } from "../pdf-text.mjs";
-import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers } from "../harness.mjs";
+import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory } from "../harness.mjs";
 
 // The PDF account statement (/transactions/statement → backend GET /api/reports/statement): the figures for
 // one account and for all accounts, what is left out of the period, the refusals and the per-hour limit.
@@ -26,10 +26,7 @@ try {
   const jarC = await registerUser(C, "Statement Châu");
   const userId = async (email) => (await one(`select id from users where email = $1`, [email])).id;
   const [aId, bId] = [await userId(A), await userId(B)];
-  const sys = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-  const [food, salary] = [await sys("food"), await sys("salary")];
-  const addAccount = async (owner, name, currency, balance) =>
-    (await one(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,$2,'CASH',$3,$4,$4,now()) returning id`, [owner, name, currency, balance])).id;
+  const [food, salary] = [await systemCategory("food"), await systemCategory("salary")];
   const addTx = (owner, account, { type = "EXPENSE", category = food, amount, date, note = null, currency = "VND", converted = amount, group = null, direction = null }) =>
     db.query(
       `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,note,"transferGroupId","transferDirection","updatedAt")
@@ -69,21 +66,27 @@ try {
   check("the summary: opening balance, debits, credits, closing balance and number of transactions",
     after("Số dư đầu kỳ (VND)") === "900,000" && st.text.includes("Total Debit in Period\n250,000") && st.text.includes("Total Credit in Period\n500,000") &&
       after("Số dư cuối kỳ (VND)") === "1,150,000" && st.text.includes("Transactions\n3"), summary.slice(20, 45).join(" | "));
-  check("every transaction of the period is listed in date order with its debit or credit, original amount and description",
-    st.text.includes("05/09/2026") && st.text.includes("500,000.00 VND") && st.text.indexOf("Lương - Lương tháng 9") < st.text.indexOf("Ăn uống - Ăn trưa") &&
-      st.text.indexOf("Ăn uống - Ăn trưa") < st.text.indexOf("Chuyển đến Tiết kiệm") && /\n200,000\nĂn uống - Ăn trưa/.test(st.text));
+  check("the details start from the opening balance on the first day of the period",
+    /\n01\/09\/2026\nSố dư đầu kỳ \(Opening balance\)\n900,000\n/.test(st.text), st.text.slice(st.text.indexOf("Statement details"), st.text.indexOf("Statement details") + 300));
+  check("every transaction of the period is listed in date order with its description, debit or credit and the balance after it",
+    st.text.includes("05/09/2026") && st.text.indexOf("Lương - Lương tháng 9") < st.text.indexOf("Ăn uống - Ăn trưa") &&
+      st.text.indexOf("Ăn uống - Ăn trưa") < st.text.indexOf("Chuyển đến Tiết kiệm") &&
+      /\nLương - Lương tháng 9\n500,000\n1,400,000\n/.test(st.text) && /\nĂn uống - Ăn trưa\n200,000\n1,200,000\n/.test(st.text) &&
+      /\nChuyển đến Tiết kiệm\n50,000\n1,150,000\n/.test(st.text));
   check("transactions outside the period or of other accounts are left out", !["Trước kỳ", "Sau kỳ", "Cà phê Mỹ", "Nhận từ"].some((part) => st.text.includes(part)));
-  check("the totals and the end of the statement close it",
-    st.text.includes("Total Debit in Period:\n250,000") && st.text.includes("Total Credit in Period:\n500,000") && st.text.includes("1,150,000 VND") &&
+  check("the totals and the end of the statement close it, the closing balance being the last running balance",
+    st.text.includes("Total Debit in Period:\n250,000") && st.text.includes("Total Credit in Period:\n500,000") && st.text.includes("Closing Balance:\n1,150,000") &&
       st.text.includes("Kết Thúc Sao Kê") && st.text.includes("1/1"));
 
   // ---------- All accounts ----------
   st = await statement(jarA, september);
   check("all accounts: in the default currency, transfers on both sides, the account named on each line",
     st.res.status === 200 && st.text.includes("Tất cả tài khoản") && st.text.includes("Chuyển đến Tiết kiệm (Ví chính)") && st.text.includes("Nhận từ Ví chính (Tiết kiệm)") &&
-      st.text.includes("Total Debit in Period:\n250,000") && st.text.includes("Total Credit in Period:\n550,000") && st.text.includes("1,200,000 VND") && st.text.includes("Transactions\n5"));
-  check("a transaction without an exchange rate is listed but left out of the totals, and the statement says so",
-    st.text.includes("10.00 USD") && st.text.includes("Ăn uống - Cà phê Mỹ (Đô la)") && st.text.includes("1 giao dịch chưa có tỷ giá"));
+      st.text.includes("Total Debit in Period:\n250,000") && st.text.includes("Total Credit in Period:\n550,000") && st.text.includes("Closing Balance:\n1,200,000") && st.text.includes("Transactions\n5"));
+  check("all accounts: the running balance moves with both sides of a transfer",
+    /\nChuyển đến Tiết kiệm \(Ví chính\)\n50,000\n1,150,000\n/.test(st.text) && /\nNhận từ Ví chính \(Tiết kiệm\)\n50,000\n1,200,000\n/.test(st.text));
+  check("a transaction without an exchange rate is listed with its own amount but leaves the balance and totals alone, and the statement says so",
+    /\nĂn uống - Cà phê Mỹ \(Đô la, 10\.00 USD\)\n1,200,000\n/.test(st.text) && st.text.includes("1 giao dịch chưa có tỷ giá"));
 
   // ---------- Refusals ----------
   check("signed out, the download goes to the login page", (await get(`/transactions/statement?${new URLSearchParams(september)}`)).status === 307);

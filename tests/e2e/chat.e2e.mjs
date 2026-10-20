@@ -1,4 +1,4 @@
-import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one, removeUsers } from "../harness.mjs";
+import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one, removeUsers, addAccount, systemCategory } from "../harness.mjs";
 
 // The chat assistant (/api/chat). The AI API is replaced by tests/mock-ai.mjs: this suite queues
 // what the "model" says (text, or a request to call a tool) and reads back what the app sent it, which is
@@ -43,15 +43,12 @@ try {
   const [aId, bId] = [await idOf(A), await idOf(B)];
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
   const month = today.slice(0, 7);
-  const category = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-  const [food, salary] = [await category("food"), await category("salary")];
-  const account = async (uid, name, balance) =>
-    (await one(`insert into accounts (id,"userId",name,type,currency,"initialBalance","currentBalance","updatedAt") values (gen_random_uuid()::text,$1,$2,'BANK','VND',0,$3,now()) returning id`, [uid, name, balance])).id;
+  const [food, salary] = [await systemCategory("food"), await systemCategory("salary")];
   const tx = (uid, accountId, categoryId, type, amount, note) =>
     db.query(`insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency","exchangeRateUsed",date,note,"updatedAt")
               values (gen_random_uuid()::text,$1,$2,$3,$4,$5,'VND',$5,1,$6::date,$7,now())`, [uid, accountId, categoryId, type, amount, today, note]);
-  const accountA = await account(aId, "Ví của An", 16500000);
-  const accountB = await account(bId, "Két của Bình", 777000);
+  const accountA = await addAccount(aId, "Ví của An", "VND", 16500000, "BANK");
+  const accountB = await addAccount(bId, "Két của Bình", "VND", 777000, "BANK");
   await tx(aId, accountA, salary, "INCOME", 20000000, "Lương");
   await tx(aId, accountA, food, "EXPENSE", 3000000, "Phở bò");
   await tx(aId, accountA, food, "EXPENSE", 500000, "Cà phê");

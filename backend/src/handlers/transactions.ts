@@ -5,7 +5,7 @@ import { isoDateToDate } from "@fm/shared/dates";
 import { formText, type FormState } from "@fm/shared/form-state";
 import { isInflow, type Movement } from "@fm/shared/transactions";
 import { requireUser } from "../auth/current-user";
-import { convertToDefaultCurrency, refreshRates } from "../exchange";
+import { convertToDefaultCurrency, refreshRates, type Conversion } from "../exchange";
 import { redirect } from "../http/respond";
 import { getI18n } from "../i18n";
 import { idSchema } from "../validations/common";
@@ -69,6 +69,20 @@ function transactionValues(formData: FormData) {
   };
 }
 
+// The submitted income or expense, checked, with its amount and date as they are stored.
+function parseEntry(values: ReturnType<typeof transactionValues>) {
+  const parsed = transactionSchema.safeParse(values);
+  if (!parsed.success) return { ok: false as const, errors: z.flattenError(parsed.error).fieldErrors };
+  return { ok: true as const, entry: { ...parsed.data, amount: new Prisma.Decimal(parsed.data.amount), date: isoDateToDate(parsed.data.date) } };
+}
+type Entry = Extract<ReturnType<typeof parseEntry>, { ok: true }>["entry"];
+
+// The columns an income or expense entry writes, in the currency of the account it is on.
+function entryData(entry: Entry, account: { id: string; currency: string }, categoryId: string, conversion: Conversion) {
+  const { type, amount, date, note } = entry;
+  return { accountId: account.id, categoryId, type, amount, currency: account.currency, date, note, ...conversion };
+}
+
 export async function createTransaction(
   _prev: TransactionFormState,
   formData: FormData,
@@ -76,40 +90,26 @@ export async function createTransaction(
   const user = await requireUser();
 
   const values = transactionValues(formData);
-  const parsed = transactionSchema.safeParse(values);
-  if (!parsed.success) {
-    return { errors: z.flattenError(parsed.error).fieldErrors, values };
-  }
-  const { type, accountId, categoryId, note } = parsed.data;
-  const amount = new Prisma.Decimal(parsed.data.amount);
-  const date = isoDateToDate(parsed.data.date);
+  const parsed = parseEntry(values);
+  if (!parsed.ok) return { errors: parsed.errors, values };
+  const { entry } = parsed;
 
   const [account, category] = await Promise.all([
     prisma.account.findFirst({
-      where: { id: accountId, userId: user.id, archivedAt: null },
+      where: { id: entry.accountId, userId: user.id, archivedAt: null },
       select: { id: true, currency: true },
     }),
-    findCategory(prisma, user.id, categoryId, type),
+    findCategory(prisma, user.id, entry.categoryId, entry.type),
   ]);
   if (!account) return { errors: { accountId: [ACCOUNT_ERROR] }, values };
   if (!category) return { errors: { categoryId: [CATEGORY_ERROR] }, values };
 
   if (account.currency !== user.defaultCurrency) await refreshRates();
-  const conversion = await convertToDefaultCurrency(prisma, amount, account.currency, user.defaultCurrency, date);
+  const conversion = await convertToDefaultCurrency(prisma, entry.amount, account.currency, user.defaultCurrency, entry.date);
 
   await prisma.$transaction(async (tx) => {
     const created = await tx.transaction.create({
-      data: {
-        userId: user.id,
-        accountId: account.id,
-        categoryId: category.id,
-        type,
-        amount,
-        currency: account.currency,
-        date,
-        note,
-        ...conversion,
-      },
+      data: { userId: user.id, ...entryData(entry, account, category.id, conversion) },
       select: { type: true, transferDirection: true, amount: true },
     });
     await adjustBalance(tx, user.id, account.id, signedAmount(created));
@@ -129,13 +129,9 @@ export async function updateTransaction(
   const id = idSchema.safeParse(transactionId);
   if (!id.success) return { message: NOT_FOUND_MESSAGE, values };
 
-  const parsed = transactionSchema.safeParse(values);
-  if (!parsed.success) {
-    return { errors: z.flattenError(parsed.error).fieldErrors, values };
-  }
-  const { type, accountId, categoryId, note } = parsed.data;
-  const amount = new Prisma.Decimal(parsed.data.amount);
-  const date = isoDateToDate(parsed.data.date);
+  const parsed = parseEntry(values);
+  if (!parsed.ok) return { errors: parsed.errors, values };
+  const { entry } = parsed;
 
   await refreshRates();
   const failure = await prisma.$transaction(async (tx): Promise<TransactionFormState> => {
@@ -144,31 +140,22 @@ export async function updateTransaction(
     if (!existing || existing.type === "TRANSFER") return { message: NOT_FOUND_MESSAGE, values };
 
     const account = await tx.account.findFirst({
-      where: { id: accountId, userId: user.id },
+      where: { id: entry.accountId, userId: user.id },
       select: { id: true, currency: true, archivedAt: true },
     });
     // Moving a transaction onto an archived account is not allowed; leaving it on one is.
     if (!account || (account.archivedAt && account.id !== existing.accountId)) {
       return { errors: { accountId: [ACCOUNT_ERROR] }, values };
     }
-    const category = await findCategory(tx, user.id, categoryId, type);
+    const category = await findCategory(tx, user.id, entry.categoryId, entry.type);
     if (!category) return { errors: { categoryId: [CATEGORY_ERROR] }, values };
 
-    const conversion = await convertToDefaultCurrency(tx, amount, account.currency, user.defaultCurrency, date);
+    const conversion = await convertToDefaultCurrency(tx, entry.amount, account.currency, user.defaultCurrency, entry.date);
 
     await adjustBalance(tx, user.id, existing.accountId, signedAmount(existing).neg());
     const updated = await tx.transaction.update({
       where: { id: existing.id },
-      data: {
-        accountId: account.id,
-        categoryId: category.id,
-        type,
-        amount,
-        currency: account.currency,
-        date,
-        note,
-        ...conversion,
-      },
+      data: entryData(entry, account, category.id, conversion),
       select: { type: true, transferDirection: true, amount: true },
     });
     await adjustBalance(tx, user.id, account.id, signedAmount(updated));

@@ -1,3 +1,5 @@
+import { daysBetween, isoDateToDate } from "./dates";
+
 // The PDF account statement: its limits and the reasons an export is refused. The backend enforces them;
 // the form on the transactions page checks the dates first and shows the same messages.
 export const STATEMENT_MAX_DAYS = 1096; // three years
@@ -21,5 +23,5 @@ export function isStatementError(code: unknown): code is StatementError {
 
 // Days from `from` to `to`, both "YYYY-MM-DD", counting both ends.
 export function statementDays(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
+  return daysBetween(isoDateToDate(from), isoDateToDate(to)) + 1;
 }

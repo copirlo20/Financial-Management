@@ -3,6 +3,7 @@ import { Prisma, prisma } from "@fm/database";
 import type { CategoryType } from "@fm/database";
 import { formText } from "@fm/shared/form-state";
 import { requireAdmin } from "../auth/current-user";
+import { sameName } from "../data/names";
 import { redirect } from "../http/respond";
 import { createSystemCategorySchema, updateSystemCategorySchema } from "../validations/category";
 import { idSchema } from "../validations/common";
@@ -10,17 +11,8 @@ import type { CategoryFormState, DeleteCategoryState } from "./categories";
 
 const NOT_FOUND_MESSAGE = "Không tìm thấy danh mục.";
 
-async function isSystemNameTaken(type: CategoryType, name: string, exceptId?: string) {
-  const existing = await prisma.category.findFirst({
-    where: {
-      userId: null,
-      type,
-      name: { equals: name, mode: "insensitive" },
-      ...(exceptId ? { id: { not: exceptId } } : {}),
-    },
-    select: { id: true },
-  });
-  return existing !== null;
+async function isSystemNameTaken(type: CategoryType, name: string, exceptId?: string): Promise<boolean> {
+  return (await prisma.category.findFirst({ where: { userId: null, type, ...sameName(name, exceptId) }, select: { id: true } })) !== null;
 }
 
 export async function createSystemCategory(_prev: CategoryFormState, formData: FormData): Promise<CategoryFormState> {
