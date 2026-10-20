@@ -1,20 +1,10 @@
-import type Decimal from "decimal.js";
 import { formatMoney } from "@fm/shared/currencies";
 import { formatDate } from "@fm/shared/dates";
-import { GOAL_STATUS_LABELS, type SavingsGoalStatus } from "@fm/shared/labels";
+import { GOAL_STATUS_LABELS } from "@fm/shared/labels";
 import { getI18n } from "@/lib/i18n/server";
-import { goalProgress } from "@/lib/savings";
+import { goalProgress, type GoalNumbers } from "@/lib/savings";
 
-type Props = {
-  goal: {
-    name: string;
-    targetAmount: Decimal;
-    currentAmount: Decimal;
-    currency: string;
-    deadline: Date | null;
-    status: SavingsGoalStatus;
-  };
-};
+type Props = { goal: GoalNumbers & { name: string } };
 
 export async function GoalProgress({ goal }: Props) {
   const { t, locale } = await getI18n();

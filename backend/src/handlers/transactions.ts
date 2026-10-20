@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { Prisma, prisma } from "@fm/database";
-import type { TransactionType, TransferDirection } from "@fm/database";
 import { isoDateToDate } from "@fm/shared/dates";
 import { formText, type FormState } from "@fm/shared/form-state";
+import { isInflow, type Movement } from "@fm/shared/transactions";
 import { requireUser } from "../auth/current-user";
 import { convertToDefaultCurrency, refreshRates } from "../exchange";
 import { redirect } from "../http/respond";
@@ -20,13 +20,8 @@ type Tx = Prisma.TransactionClient;
 
 const NOT_FOUND_MESSAGE = "Không tìm thấy giao dịch.";
 
-function signedAmount(row: {
-  type: TransactionType;
-  transferDirection: TransferDirection | null;
-  amount: Prisma.Decimal;
-}): Prisma.Decimal {
-  const inflow = row.type === "INCOME" || (row.type === "TRANSFER" && row.transferDirection === "IN");
-  return inflow ? row.amount : row.amount.neg();
+function signedAmount(row: Movement & { amount: Prisma.Decimal }): Prisma.Decimal {
+  return isInflow(row) ? row.amount : row.amount.neg();
 }
 
 // Always runs in the same database transaction as the row change it accounts for, so the cached balance cannot drift.
@@ -276,5 +271,4 @@ export async function deleteTransaction(formData: FormData): Promise<void> {
     }
     await tx.transaction.deleteMany({ where: { id: { in: rows.map((row) => row.id) }, userId: user.id } });
   });
-
 }

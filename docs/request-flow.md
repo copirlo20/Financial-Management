@@ -2,6 +2,7 @@
 
 Mọi chức năng khác đều đi qua cùng một đường: **trình duyệt → frontend (Next.js) → backend (Express) → database**.
 Hiểu đường này một lần là đọc được mọi luồng còn lại. Xem thêm [STRUCTURE.md](STRUCTURE.md) về thư mục.
+Bên trong backend, từng route đi qua file và hàm nào tới khi trả kết quả: [backend-flow.md](backend-flow.md).
 
 ## Nguyên tắc
 

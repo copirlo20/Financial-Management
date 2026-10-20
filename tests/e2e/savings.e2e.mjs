@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, removeUsers } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -136,7 +136,7 @@ try {
   check("deleting a goal removes it and its history", res.status === 303 && res.headers.get("location") === "/savings" && !(await goalRow(goalId)) && (await contributions(goalId)).length === 0);
   check("accounts are untouched by savings goals", (await one(`select count(*)::int n from transactions where "userId" = any($1)`, [[aId, bId]])).n === 0);
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.end();
 }
 report();

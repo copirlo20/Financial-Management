@@ -1,7 +1,7 @@
 // Behaviour that only exists with JavaScript running: charts, confirmation dialogs, in-place form
 // updates, the navigation skeleton, and the error boundary. Uses a real headless browser.
 import path from "node:path";
-import { BASE, STAMP, browserCookies, check, db, one, registerUser, report } from "../harness.mjs";
+import { BASE, STAMP, browserCookies, check, db, one, registerUser, report, removeUsers } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
 const EMAIL = `e2e-browser-${STAMP}@example.com`;
@@ -319,7 +319,7 @@ try {
   console.log(`  at abort: server answered /login with ${server} in ${Date.now() - started}ms`);
 } finally {
   await browser?.close();
-  await db.query(`delete from users where email = $1`, [EMAIL]);
+  await removeUsers([EMAIL]);
   await db.end();
 }
 report();

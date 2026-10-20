@@ -1,5 +1,5 @@
 import { pdfText } from "../pdf-text.mjs";
-import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one } from "../harness.mjs";
+import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers } from "../harness.mjs";
 
 // The PDF account statement (/transactions/statement → backend GET /api/reports/statement): the figures for
 // one account and for all accounts, what is left out of the period, the refusals and the per-hour limit.
@@ -124,7 +124,7 @@ try {
   check("30 statements an hour are allowed", statuses.every((status) => status === 200), statuses.filter((status) => status !== 200).join(","));
   check("the next one is refused for a while", refusal((await statement(jarC, september)).res) === "busy");
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B, C]]);
+  await removeUsers([A, B, C]);
   await db.end();
 }
 report();

@@ -1,6 +1,7 @@
 import { prisma, Prisma } from "@fm/database";
 import { isoDateToDate } from "@fm/shared/dates";
 import { STATEMENT_MAX_ROWS } from "@fm/shared/reports";
+import { isInflow } from "@fm/shared/transactions";
 import type { CurrentUser } from "../auth/current-user";
 import { exchangeRate } from "../exchange";
 import { HttpError } from "../http/errors";
@@ -45,9 +46,6 @@ export type Statement = {
 };
 
 const ZERO = new Prisma.Decimal(0);
-
-type Movement = { type: string; transferDirection: string | null };
-const isInflow = (row: Movement) => row.type === "INCOME" || (row.type === "TRANSFER" && row.transferDirection === "IN");
 
 export async function buildStatement(user: CurrentUser, query: StatementQuery): Promise<Statement> {
   const { t } = await getI18n();

@@ -1,5 +1,5 @@
-import { existsSync, rmSync } from "node:fs";
-import { root, STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx } from "../harness.mjs";
+import { existsSync } from "node:fs";
+import { STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx, removeUsers, importFilePath } from "../harness.mjs";
 
 // Importing with the AI assistant. The AI API is replaced by tests/mock-ai.mjs, which the
 // runner starts and the app is pointed at; this suite queues the assistant's answers and reads back
@@ -31,7 +31,6 @@ const batchOf = (id) => one(`select * from import_batches where id = $1`, [id]);
 const txCount = async (accountId) => (await one(`select count(*)::int n from transactions where "accountId" = $1`, [accountId])).n;
 const batchCount = async (uid) => (await one(`select count(*)::int n from import_batches where "userId" = $1`, [uid])).n;
 const systemCategory = async (key) => (await one(`select id from categories where "systemKey" = $1`, [key])).id;
-const storagePath = (key) => `${root}backend/storage/imports/${key}`;
 const importedRows = async (batchId) =>
   (await db.query(`select t.*, c."systemKey" from transactions t join categories c on c.id = t."categoryId" where t."importBatchId" = $1 order by t.date, t.amount`, [batchId])).rows;
 
@@ -166,7 +165,7 @@ try {
   const batch2 = await uploadOk({ bytes: KNOWN_XLSX, name: "tu-ghep.xlsx" }, {});
   html = await page(`/imports/${batch2}`, jarA);
   check("without the assistant nothing is sent and the columns are mapped by hand as before",
-    (await sent()).length === 0 && (await batchOf(batch2)).aiAnalysis === null && existsSync(storagePath((await batchOf(batch2)).tempFileKey)) && html.includes('name="headerRow"') && !html.includes("rowCategory-"));
+    (await sent()).length === 0 && (await batchOf(batch2)).aiAnalysis === null && existsSync(importFilePath((await batchOf(batch2)).tempFileKey)) && html.includes('name="headerRow"') && !html.includes("rowCategory-"));
   await cancel(batch2);
 
   // ---------- Assistant unavailable or wrong: fall back to mapping by hand ----------
@@ -176,7 +175,7 @@ try {
     const stored = await batchOf(id);
     const body = await page(`/imports/${id}`, jarA);
     const guessed = formDefaults(formWith(body, 'name="headerRow"'));
-    check(label, stored.aiAnalysis?.kind === "table" && stored.aiAnalysis.failed === true && existsSync(storagePath(stored.tempFileKey)) && clean(body).includes("Trợ lý AI không đọc được file này") && guessed.dateColumn === "0",
+    check(label, stored.aiAnalysis?.kind === "table" && stored.aiAnalysis.failed === true && existsSync(importFilePath(stored.tempFileKey)) && clean(body).includes("Trợ lý AI không đọc được file này") && guessed.dateColumn === "0",
       JSON.stringify(stored.aiAnalysis));
     const requestCount = (await sent()).length;
     await cancel(id);
@@ -283,9 +282,7 @@ try {
   check("a spreadsheet then falls back to mapping by hand", stored.aiAnalysis?.kind === "table" && stored.aiAnalysis.failed === true && (await sent()).length === 0, JSON.stringify(stored.aiAnalysis));
   await cancel(fallback);
 } finally {
-  const leftovers = (await db.query(`select b."tempFileKey" k from import_batches b join users u on u.id = b."userId" where u.email = any($1) and b."tempFileKey" is not null`, [[A, B]])).rows;
-  for (const { k } of leftovers) rmSync(storagePath(k), { force: true });
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.end();
   await queue([]);
 }

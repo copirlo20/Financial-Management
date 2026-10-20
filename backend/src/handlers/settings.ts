@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "@fm/database";
 import { formText, type FormState } from "@fm/shared/form-state";
 import { currentSessionId, getCurrentUser, requireUser } from "../auth/current-user";
-import { PasswordCheckBusyError, hashPassword, verifyPassword } from "../auth/password";
+import { PASSWORD_CHECK_BUSY_MESSAGE, PasswordCheckBusyError, hashPassword, verifyPassword } from "../auth/password";
 import { revokeUserSessions } from "../auth/session";
 import { recordLoginFailure, refuseLogin } from "../auth/throttle";
 import { exchangeRate, recomputeConversions, refreshRates } from "../exchange";
@@ -121,7 +121,7 @@ export async function changePassword(_prev: PasswordFormState, formData: FormDat
     const passwordHash = await hashPassword(parsed.data.newPassword);
     await prisma.user.updateMany({ where: { id: user.id }, data: { passwordHash } });
   } catch (error) {
-    if (error instanceof PasswordCheckBusyError) return { message: "Hệ thống đang bận. Hãy thử lại sau ít giây." };
+    if (error instanceof PasswordCheckBusyError) return { message: PASSWORD_CHECK_BUSY_MESSAGE };
     throw error;
   }
 

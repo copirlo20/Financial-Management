@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { isStatementError } from "@fm/shared/reports";
-import { backendFetch } from "@/lib/api/client";
+import { backendFetch, downloadResponse } from "@/lib/api/client";
 
 // Download of the PDF account statement; the backend builds it. A refusal sends the browser back to the
 // transactions page with the reason, which the statement form shows.
@@ -21,11 +21,5 @@ export async function GET(request: NextRequest) {
     back.searchParams.set("statementError", isStatementError(code) ? code : "failed");
     return Response.redirect(back, 303);
   }
-
-  const headers = new Headers();
-  for (const name of ["content-type", "content-disposition", "cache-control"]) {
-    const value = upstream.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-  return new Response(upstream.body, { headers });
+  return downloadResponse(upstream);
 }

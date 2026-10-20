@@ -1,4 +1,4 @@
-import { BASE, check, report, decode, clean, get, db } from "../harness.mjs";
+import { BASE, check, report, decode, clean, get, db, removeUsers } from "../harness.mjs";
 // Empty states for a brand-new user, and not-found pages.
 
 const EMAIL = `e2e-states-${Date.now()}@example.com`;
@@ -49,7 +49,7 @@ try {
   res = await get("/khong-co-trang-nay");
   check("signed-out visitors are sent to login instead of seeing a 404", res.status === 307 && (res.headers.get("location") ?? "").includes("/login"));
 } finally {
-  await db.query(`delete from users where email = $1`, [EMAIL]);
+  await removeUsers([EMAIL]);
   await db.end();
 }
 report();

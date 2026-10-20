@@ -226,6 +226,30 @@ flowchart LR
 - **Backend là nơi duy nhất kiểm tra quyền và validate.** Mọi truy vấn đều lọc theo người dùng hiện tại.
 - **Chỉ backend import gói `database`.**
 
+### 🗄️ Cơ sở dữ liệu
+
+11 bảng PostgreSQL. Mọi dữ liệu thuộc về một người dùng; danh mục có `userId` rỗng là danh mục hệ thống dùng chung. Sơ đồ ERD đầy đủ (mọi cột, kiểu, khóa, ràng buộc, enum): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#sơ-đồ-erd).
+
+```mermaid
+erDiagram
+    users ||--o{ accounts : "sở hữu"
+    users ||--o{ transactions : "ghi"
+    users |o--o{ categories : "danh mục riêng"
+    users ||--o{ budgets : "đặt"
+    users ||--o{ savings_goals : "đặt"
+    users ||--o{ import_batches : "nhập"
+    users ||--o{ refresh_tokens : "phiên"
+    accounts ||--o{ transactions : "chứa"
+    accounts ||--o{ import_batches : "nhận"
+    categories |o--o{ transactions : "phân loại"
+    categories |o--o{ budgets : "hạn mức"
+    categories |o--o{ categories : "danh mục con"
+    import_batches |o--o{ transactions : "tạo ra"
+    savings_goals ||--o{ savings_contributions : "gồm"
+```
+
+`exchange_rates` (tỷ giá) và `rate_limits` (bộ đếm giới hạn) đứng riêng, không có khóa ngoại.
+
 ### 📁 Cấu trúc thư mục
 
 ```text
@@ -425,8 +449,8 @@ Chi tiết nằm trong thư mục [docs/](docs/). **Đọc [request-flow](docs/r
 | Bạn cần                                                                                             | Đọc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Hiểu một chức năng hoạt động thế nào** (file nào làm gì, luồng từng bước, quy tắc, lỗi, kiểm thử) | Nền tảng: [request](docs/request-flow.md) · [auth](docs/auth-flow.md) · [security](docs/security-flow.md) · [ui](docs/ui-flow.md)<br />Dữ liệu tài chính: [account](docs/account-flow.md) · [category](docs/category-flow.md) · [transaction](docs/transaction-flow.md) · [budget](docs/budget-flow.md) · [savings](docs/savings-flow.md) · [currency](docs/currency-flow.md)<br />Nhập và báo cáo: [import](docs/import-flow.md) · [dashboard](docs/dashboard-flow.md) · [statement](docs/statement-flow.md) · [chat](docs/chat-flow.md)<br />Khác: [settings](docs/settings-flow.md) · [admin](docs/admin-flow.md) · [mobile](docs/mobile-flow.md) |
-| **Tra cứu**                                                                                         | [Thuật toán và quy trình xử lý](docs/algorithms.md) · [API](docs/api.md) · [Kiểm thử](docs/testing.md) · [Cấu trúc thư mục](docs/STRUCTURE.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **Thiết kế và kế hoạch**                                                                            | [PRD](docs/PRD.md) (mục tiêu, tính năng đã làm / chưa làm) · [ARCHITECTURE](docs/ARCHITECTURE.md) (kiến trúc, schema, phân quyền) · [PLAN](docs/PLAN.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Tra cứu**                                                                                         | [Đường đi trong backend của từng route](docs/backend-flow.md) (file, hàm, bảng, kết quả trả về) · [Thuật toán và quy trình xử lý](docs/algorithms.md) · [API](docs/api.md) · [Kiểm thử](docs/testing.md) · [Cấu trúc thư mục](docs/STRUCTURE.md)                                                                                                                                                                                                                                                                                                                                                                     |
+| **Thiết kế và kế hoạch**                                                                            | [PRD](docs/PRD.md) (mục tiêu, tính năng đã làm / chưa làm) · [ARCHITECTURE](docs/ARCHITECTURE.md) (kiến trúc, sơ đồ ERD và schema, phân quyền) · [PLAN](docs/PLAN.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## 🗺️ Lộ trình
 

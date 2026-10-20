@@ -46,27 +46,185 @@ Mô hình này là **BFF** (backend for frontend): trình duyệt chỉ nói chu
 
 ## 2. Cơ sở dữ liệu
 
-Nguồn sự thật: [database/prisma/schema.prisma](../database/prisma/schema.prisma) và [migrations/](../database/prisma/migrations/).
+Nguồn sự thật: [database/prisma/schema.prisma](../database/prisma/schema.prisma) và [migrations/](../database/prisma/migrations/). PostgreSQL, 11 bảng, truy cập qua Prisma 7 (adapter `pg`).
+
+### Sơ đồ ERD
+
+Mỗi khối là một bảng (tên thật trong database) với mọi cột: kiểu, khóa (`PK` khóa chính, `FK` khóa ngoại, `UK` duy nhất) và ghi chú. Nhãn trên đường nối là cột khóa ngoại và việc xảy ra khi xóa dòng cha.
 
 ```mermaid
 erDiagram
-    USER ||--o{ REFRESH_TOKEN : "phiên đăng nhập"
-    USER ||--o{ ACCOUNT : "sở hữu"
-    USER ||--o{ CATEGORY : "danh mục riêng"
-    USER ||--o{ TRANSACTION : "ghi"
-    USER ||--o{ BUDGET : "đặt"
-    USER ||--o{ SAVINGS_GOAL : "đặt"
-    USER ||--o{ IMPORT_BATCH : "nhập"
-    ACCOUNT ||--o{ TRANSACTION : "chứa"
-    ACCOUNT ||--o{ IMPORT_BATCH : "nhận"
-    CATEGORY ||--o{ TRANSACTION : "phân loại"
-    CATEGORY ||--o{ BUDGET : "đặt hạn mức"
-    CATEGORY ||--o{ CATEGORY : "danh mục con"
-    IMPORT_BATCH ||--o{ TRANSACTION : "tạo ra"
-    SAVINGS_GOAL ||--o{ SAVINGS_CONTRIBUTION : "gồm"
+    users ||--o{ refresh_tokens : "userId (CASCADE)"
+    users ||--o{ accounts : "userId (CASCADE)"
+    users |o--o{ categories : "userId (CASCADE), null = danh mục hệ thống"
+    users ||--o{ transactions : "userId (CASCADE)"
+    users ||--o{ budgets : "userId (CASCADE)"
+    users ||--o{ savings_goals : "userId (CASCADE)"
+    users ||--o{ import_batches : "userId (CASCADE)"
+    accounts ||--o{ transactions : "accountId (CASCADE)"
+    accounts ||--o{ import_batches : "accountId (CASCADE)"
+    categories |o--o{ categories : "parentId (SET NULL), một cấp"
+    categories |o--o{ transactions : "categoryId (SET NULL)"
+    categories |o--o{ budgets : "categoryId (CASCADE), null = ngân sách tổng"
+    import_batches |o--o{ transactions : "importBatchId (SET NULL)"
+    savings_goals ||--o{ savings_contributions : "savingsGoalId (CASCADE)"
+
+    users {
+        uuid id PK
+        string email UK "chữ thường"
+        string passwordHash "scrypt$N$r$p$salt$key"
+        string name
+        UserRole role "USER | ADMIN, mặc định USER"
+        UserStatus status "ACTIVE | DISABLED"
+        string defaultCurrency "ISO 4217, mặc định VND"
+        Locale locale "vi | en"
+        datetime createdAt
+        datetime updatedAt
+    }
+    refresh_tokens {
+        uuid id PK
+        uuid userId FK
+        string tokenHash UK "sha256, không lưu token thô"
+        uuid sessionId "giữ qua các lần xoay vòng, có index"
+        datetime expiresAt
+        datetime rotatedAt "null; còn dùng được 10 giây"
+        datetime revokedAt "null; thu hồi hẳn"
+        datetime createdAt
+    }
+    accounts {
+        uuid id PK
+        uuid userId FK
+        string name "duy nhất theo user, không phân biệt hoa thường"
+        AccountType type "CASH | BANK | E_WALLET | CREDIT_CARD | OTHER"
+        string currency "không đổi sau khi tạo"
+        decimal initialBalance "18,2; có thể âm"
+        decimal currentBalance "18,2; lưu sẵn"
+        datetime archivedAt "null = đang dùng"
+        datetime createdAt
+        datetime updatedAt
+    }
+    categories {
+        uuid id PK
+        uuid userId FK "null = hệ thống"
+        string systemKey UK "chỉ danh mục hệ thống có"
+        uuid parentId FK "null = danh mục gốc"
+        string name
+        CategoryType type "EXPENSE | INCOME"
+        string icon "null"
+        string color "null, #RRGGBB"
+        datetime createdAt
+        datetime updatedAt
+    }
+    transactions {
+        uuid id PK
+        uuid userId FK
+        uuid accountId FK
+        uuid categoryId FK "null với chuyển khoản"
+        TransactionType type "EXPENSE | INCOME | TRANSFER"
+        decimal amount "18,2; CHECK > 0"
+        string currency "tiền của ví"
+        decimal amountInDefaultCurrency "18,2; null = chưa có tỷ giá"
+        decimal exchangeRateUsed "24,12; null"
+        date date "ngày giao dịch"
+        string note "null"
+        TransactionSource source "MANUAL | IMPORT"
+        uuid importBatchId FK "null"
+        uuid transferGroupId "null; hai vế chung một mã"
+        TransferDirection transferDirection "null | OUT | IN"
+        string dedupeHash "null; sha256 chống trùng khi nhập"
+        datetime createdAt
+        datetime updatedAt
+    }
+    budgets {
+        uuid id PK
+        uuid userId FK "UK cùng categoryId, periodStart"
+        uuid categoryId FK "null = ngân sách tổng"
+        decimal amountLimit "18,2; CHECK > 0"
+        string currency "tiền mặc định của user"
+        date periodStart "luôn ngày 1 của tháng"
+        datetime createdAt
+        datetime updatedAt
+    }
+    savings_goals {
+        uuid id PK
+        uuid userId FK
+        string name
+        decimal targetAmount "18,2; CHECK > 0"
+        decimal currentAmount "18,2; lưu sẵn, mặc định 0"
+        string currency
+        date deadline "null"
+        SavingsGoalStatus status "IN_PROGRESS | COMPLETED | ARCHIVED"
+        datetime createdAt
+        datetime updatedAt
+    }
+    savings_contributions {
+        uuid id PK
+        uuid savingsGoalId FK
+        decimal amount "18,2; gửi dương, rút âm"
+        date date
+        string note "null"
+        datetime createdAt
+    }
+    import_batches {
+        uuid id PK
+        uuid userId FK
+        uuid accountId FK
+        string fileName
+        string tempFileKey "null; file chờ xác nhận"
+        json columnMapping "null; có sau khi xác nhận"
+        json aiAnalysis "null; kết quả AI đọc file"
+        ImportStatus status "PENDING | PROCESSED | FAILED | ROLLED_BACK"
+        int rowCount
+        int importedCount
+        int skippedCount
+        string errorMessage "null; lỗi từng dòng"
+        datetime createdAt
+        datetime updatedAt
+    }
+    exchange_rates {
+        uuid id PK
+        string baseCurrency "luôn USD; UK cùng quoteCurrency, date"
+        string quoteCurrency
+        decimal rate "18,6"
+        date date
+        boolean isManual "admin nhập tay"
+        datetime createdAt
+    }
+    rate_limits {
+        string key PK "ví dụ login:fail:email"
+        timestamptz windowStart PK "có index để dọn"
+        bigint count "số lần hoặc số token"
+    }
 ```
 
-`EXCHANGE_RATE` (tỷ giá) và `RATE_LIMIT` (bộ đếm giới hạn) đứng riêng, không có khóa ngoại.
+`exchange_rates` (tỷ giá) và `rate_limits` (bộ đếm giới hạn) đứng riêng, không có khóa ngoại.
+
+**Ràng buộc nằm trong migration SQL** (Prisma không biểu diễn được, nên không có trong sơ đồ trên):
+
+| Bảng | Ràng buộc | Ý nghĩa |
+| --- | --- | --- |
+| `transactions` | `CHECK (amount > 0)` | Số tiền luôn dương, chiều thu/chi lấy từ `type` |
+| `transactions` | `transactions_transfer_shape` | `transferGroupId` và `transferDirection` có **khi và chỉ khi** `type = TRANSFER` |
+| `transactions` | `transactions_transfer_no_category` | Chuyển khoản không có danh mục |
+| `categories` | `categories_systemKey_iff_system` | Có `systemKey` **khi và chỉ khi** `userId` null |
+| `budgets` | `CHECK (amountLimit > 0)` | |
+| `budgets` | chỉ mục duy nhất `(userId, periodStart) WHERE categoryId IS NULL` | Mỗi tháng một ngân sách tổng (PostgreSQL coi các `NULL` là khác nhau nên khóa duy nhất thường không đủ) |
+| `savings_goals` | `CHECK (targetAmount > 0)` | |
+
+**Kiểu enum** (khai báo trong `schema.prisma`; `@fm/shared/labels` lặp lại để frontend không phụ thuộc gói database):
+
+| Enum | Giá trị |
+| --- | --- |
+| `UserRole` | `USER`, `ADMIN` |
+| `UserStatus` | `ACTIVE`, `DISABLED` |
+| `Locale` | `vi`, `en` |
+| `AccountType` | `CASH`, `BANK`, `E_WALLET`, `CREDIT_CARD`, `OTHER` |
+| `CategoryType` | `EXPENSE`, `INCOME` |
+| `TransactionType` | `EXPENSE`, `INCOME`, `TRANSFER` |
+| `TransactionSource` | `MANUAL`, `IMPORT` |
+| `TransferDirection` | `OUT`, `IN` |
+| `ImportStatus` | `PENDING`, `PROCESSED`, `FAILED` (chưa dùng), `ROLLED_BACK` |
+| `SavingsGoalStatus` | `IN_PROGRESS`, `COMPLETED`, `ARCHIVED` |
 
 ### Các bảng
 

@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -144,7 +144,7 @@ try {
   check("unused system category deleted by admin", !(await byId(sys.id)));
   check("the 18 seeded system categories are intact", (await one(`select count(*)::int n from categories where "userId" is null`)).n === 18);
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B, ADM]]);
+  await removeUsers([A, B, ADM]);
   await db.query(`delete from categories where "systemKey" like 'e2e\\_%'`);
   await db.end();
 }

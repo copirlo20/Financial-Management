@@ -4,7 +4,7 @@ import { isoDateToDate, todayIsoDate } from "@fm/shared/dates";
 import type { Translate } from "@fm/shared/i18n/translate";
 import type { SavingsGoalStatus } from "@fm/shared/labels";
 
-type GoalNumbers = {
+export type GoalNumbers = {
   targetAmount: Decimal;
   currentAmount: Decimal;
   currency: string;

@@ -1,7 +1,8 @@
-import { existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { crc32, deflateRawSync } from "node:zlib";
-import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf } from "../harness.mjs";
+import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, removeUsers, importFilePath } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");
@@ -20,7 +21,6 @@ async function addAccount(uid, name, currency, balance) {
 const balance = async (id) => (await one(`select "currentBalance" b from accounts where id = $1`, [id])).b;
 const batchOf = (id) => one(`select * from import_batches where id = $1`, [id]);
 const txCount = async (accountId) => (await one(`select count(*)::int n from transactions where "accountId" = $1`, [accountId])).n;
-const storagePath = (key) => `${root}backend/storage/imports/${key}`;
 
 // ---------- Fixture files ----------
 // A bank's PDF: a heading, money out and money in in two right-aligned columns, a description that wraps,
@@ -159,7 +159,7 @@ try {
   // ---------- PDF with a heading, wrapped text and junk lines, split debit/credit ----------
   const batch1 = await uploadOk({ bytes: PDF1, name: "sao-ke-thang-10.pdf" });
   let batch = await batchOf(batch1);
-  check("upload creates a pending batch and stores the file", batch.status === "PENDING" && batch.rowCount === 9 && batch.tempFileKey?.endsWith(".pdf") && existsSync(storagePath(batch.tempFileKey)), `${batch.rowCount} ${batch.tempFileKey}`);
+  check("upload creates a pending batch and stores the file", batch.status === "PENDING" && batch.rowCount === 9 && batch.tempFileKey?.endsWith(".pdf") && existsSync(importFilePath(batch.tempFileKey)), `${batch.rowCount} ${batch.tempFileKey}`);
   check("nothing is imported before confirmation", (await txCount(bank)) === 0 && (await balance(bank)) === "1000000.00");
   const key1 = batch.tempFileKey;
 
@@ -191,7 +191,7 @@ try {
   check("batch records imported / skipped / failed rows", batch.status === "PROCESSED" && batch.importedCount === 4 && batch.skippedCount === 0 && batch.rowCount === 6, `${batch.importedCount}/${batch.skippedCount}/${batch.rowCount}`);
   const resultText = clean(await page(`/imports/${batch1}`, jarA));
   check("row errors are reported with row numbers", ["Dòng 8: Dòng có cả số tiền chi và số tiền thu.", "Dòng 9: Ngày không hợp lệ"].every((m) => resultText.includes(m)), batch.errorMessage);
-  check("temp file is deleted after confirm", batch.tempFileKey === null && !existsSync(storagePath(key1)));
+  check("temp file is deleted after confirm", batch.tempFileKey === null && !existsSync(importFilePath(key1)));
   let rows = (await db.query(`select * from transactions where "importBatchId" = $1 order by date, amount`, [batch1])).rows;
   check("transactions carry type, amount, date, note and source",
     rows.map((r) => `${r.type}:${r.amount}:${r.date.getFullYear()}-${r.date.getMonth() + 1}-${r.date.getDate()}:${r.note}`).join(" | ") ===
@@ -340,10 +340,10 @@ try {
   await submit(`/imports/${pendingIds[0]}`, cancelForm, { id: pendingIds[1] }, jarB);
   check("other user cannot cancel the batch (forged id)", Boolean(await batchOf(pendingIds[1])));
   res = await submit(`/imports/${pendingIds[0]}`, cancelForm, {}, jarA);
-  check("cancel deletes the pending batch and its file", res.status === 303 && !(await batchOf(pendingIds[0])) && !existsSync(storagePath(pendingKey)));
+  check("cancel deletes the pending batch and its file", res.status === 303 && !(await batchOf(pendingIds[0])) && !existsSync(importFilePath(pendingKey)));
   const deletedKey = (await batchOf(pendingIds[1])).tempFileKey;
   await submit("/imports", await deleteForm(pendingIds[1]), {}, jarA);
-  check("deleting a pending import removes its uploaded file too", !(await batchOf(pendingIds[1])) && !existsSync(storagePath(deletedKey)));
+  check("deleting a pending import removes its uploaded file too", !(await batchOf(pendingIds[1])) && !existsSync(importFilePath(deletedKey)));
   for (const id of pendingIds.slice(2)) {
     html = await page(`/imports/${id}`, jarA);
     await submit(`/imports/${id}`, formWith(html, "Hủy lần nhập này"), {}, jarA);
@@ -351,16 +351,14 @@ try {
   check("no pending batches or temp files remain", (await one(`select count(*)::int n from import_batches where "userId" = $1 and (status = 'PENDING' or "tempFileKey" is not null)`, [aId])).n === 0);
 
   // ---------- Abandoned uploads are removed after a day ----------
-  const { mkdirSync, writeFileSync, utimesSync } = await import("node:fs");
-  const { randomUUID } = await import("node:crypto");
-  mkdirSync(storagePath(""), { recursive: true });
+  mkdirSync(importFilePath(""), { recursive: true });
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
   // The stale import is one left pending when CSV was still accepted: its file is cleaned up all the same.
   const staleKey = `${randomUUID()}.csv`;
   const orphanKey = `${randomUUID()}.pdf`;
   const freshOrphanKey = `${randomUUID()}.xlsx`;
-  for (const key of [staleKey, orphanKey, freshOrphanKey]) writeFileSync(storagePath(key), "%PDF-1.4\n");
-  utimesSync(storagePath(orphanKey), twoDaysAgo, twoDaysAgo);
+  for (const key of [staleKey, orphanKey, freshOrphanKey]) writeFileSync(importFilePath(key), "%PDF-1.4\n");
+  utimesSync(importFilePath(orphanKey), twoDaysAgo, twoDaysAgo);
   const staleId = (await one(
     `insert into import_batches (id,"userId","accountId","fileName",status,"tempFileKey","rowCount","createdAt","updatedAt")
      values (gen_random_uuid()::text,$1,$2,'bo-do.csv','PENDING',$3,2,$4,$4) returning id`, [aId, bank, staleKey, twoDaysAgo])).id;
@@ -368,13 +366,12 @@ try {
   let swept = false;
   for (let i = 0; i < 40 && !swept; i++) {
     await new Promise((resolve) => setTimeout(resolve, 250));
-    swept = !(await batchOf(staleId)) && !existsSync(storagePath(staleKey)) && !existsSync(storagePath(orphanKey));
+    swept = !(await batchOf(staleId)) && !existsSync(importFilePath(staleKey)) && !existsSync(importFilePath(orphanKey));
   }
   check("an import left pending for over a day is removed with its file", swept);
-  check("an old statement file that no import refers to is removed", !existsSync(storagePath(orphanKey)));
-  check("recent imports and recent files are kept", Boolean(await batchOf(recentId)) && existsSync(storagePath((await batchOf(recentId)).tempFileKey)) && existsSync(storagePath(freshOrphanKey)));
-  const { rmSync: removeFile } = await import("node:fs");
-  removeFile(storagePath(freshOrphanKey), { force: true });
+  check("an old statement file that no import refers to is removed", !existsSync(importFilePath(orphanKey)));
+  check("recent imports and recent files are kept", Boolean(await batchOf(recentId)) && existsSync(importFilePath((await batchOf(recentId)).tempFileKey)) && existsSync(importFilePath(freshOrphanKey)));
+  rmSync(importFilePath(freshOrphanKey), { force: true });
   await submit(`/imports/${recentId}`, formWith(await page(`/imports/${recentId}`, jarA), "Hủy lần nhập này"), {}, jarA);
 
   const drift = (await db.query(
@@ -383,10 +380,7 @@ try {
        from transactions t where t."accountId" = a.id), 0)`, [aId])).rows;
   check("every balance equals opening balance plus its transactions", drift.length === 0, drift.map((d) => d.name).join());
 } finally {
-  const leftovers = (await db.query(`select b."tempFileKey" k from import_batches b join users u on u.id = b."userId" where u.email = any($1) and b."tempFileKey" is not null`, [[A, B]])).rows;
-  const { rmSync } = await import("node:fs");
-  for (const { k } of leftovers) rmSync(storagePath(k), { force: true });
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.end();
 }
 

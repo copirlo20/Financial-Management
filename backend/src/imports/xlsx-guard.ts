@@ -12,7 +12,7 @@ const CENTRAL_DIRECTORY_ENTRY = 0x02014b50;
 const LOCAL_FILE_HEADER = 0x04034b50;
 
 export class ArchiveTooLargeError extends Error {}
-export class ArchiveUnreadableError extends Error {}
+class ArchiveUnreadableError extends Error {}
 
 function findEndOfCentralDirectory(buffer: Buffer): number {
   // The record is 22 bytes plus a comment of up to 65,535 bytes, at the very end of the file.

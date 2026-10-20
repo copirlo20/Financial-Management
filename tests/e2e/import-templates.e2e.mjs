@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { root, STAMP, check, report, get, page, formWith, submit, registerUser, db, one, userId, formDefaults } from "../harness.mjs";
+import { root, STAMP, check, report, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, removeUsers } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");
@@ -41,7 +41,7 @@ try {
       "EXPENSE:45000.00:5/10:Ví dụ: Cà phê sáng | INCOME:20000000.00:6/10:Ví dụ: Lương tháng 10 | EXPENSE:1250000.50:7/10:Ví dụ: Tiền điện" && balance === "18704999.50",
     `${rows.map((r) => `${r.type}:${r.amount}:${r.date.getDate()}/${r.date.getMonth() + 1}`).join(" | ")} → ${balance}`);
 } finally {
-  await db.query(`delete from users where email = $1`, [EMAIL]);
+  await removeUsers([EMAIL]);
   await db.end();
 }
 report();

@@ -1,4 +1,4 @@
-import { root, BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf } from "../harness.mjs";
+import { BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf, removeUsers } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -245,10 +245,7 @@ try {
   html = await page("/admin/exchange-rates", { ...jarB, locale: "en" });
   check("rate admin page is fully translated", clean(html).includes("Manage exchange rates") && clean(html).includes("Latest rates") && vietnameseIn(html).length === 0, vietnameseIn(html).join(" "));
 } finally {
-  const leftovers = (await db.query(`select b."tempFileKey" k from import_batches b join users u on u.id = b."userId" where u.email = any($1) and b."tempFileKey" is not null`, [[A, B]])).rows;
-  const { rmSync } = await import("node:fs");
-  for (const { k } of leftovers) rmSync(`${root}backend/storage/imports/${k}`, { force: true });
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.query(`delete from exchange_rates where "isManual" = true and "quoteCurrency" = 'THB' and (rate = 31.5 or rate = 99.123456)`);
   await db.end();
 }

@@ -1,7 +1,7 @@
 // The app on a phone: touch input, small screens, and data that stresses the layout (long unbroken names,
 // huge amounts, wide statement files). Uses a real headless Edge/Chrome with phone emulation.
 import path from "node:path";
-import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, root, statementXlsx } from "../harness.mjs";
+import { BASE, STAMP, browserCookies, check, cookieHeader, db, decode, one, registerUser, report, statementXlsx, removeUsers } from "../harness.mjs";
 import { findBrowser, launch } from "./cdp.mjs";
 
 // A long address with no breaking points: the profile card has to cope with it.
@@ -258,10 +258,7 @@ try {
   }
 } finally {
   await browser?.close();
-  const leftovers = (await db.query(`select b."tempFileKey" k from import_batches b join users u on u.id = b."userId" where u.email = $1 and b."tempFileKey" is not null`, [EMAIL])).rows;
-  const { rmSync } = await import("node:fs");
-  for (const { k } of leftovers) rmSync(`${root}backend/storage/imports/${k}`, { force: true });
-  await db.query(`delete from users where email = $1`, [EMAIL]);
+  await removeUsers([EMAIL]);
   await db.end();
 }
 report();

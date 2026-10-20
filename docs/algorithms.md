@@ -129,7 +129,7 @@ Xem [account-flow.md](account-flow.md), [transaction-flow.md](transaction-flow.m
 
 > `currentBalance` của một ví = `initialBalance` + Σ (khoản thu và tiền nhận chuyển) − Σ (khoản chi và tiền chuyển đi)
 
-Dấu của một dòng suy ra từ `type`: `INCOME`, hoặc `TRANSFER` với `IN` là **dương**; còn lại **âm** (`signedAmount`). Số tiền lưu luôn dương (CHECK `amount > 0`), nên không có "số âm" mơ hồ.
+Dấu của một dòng suy ra từ `type`: `INCOME`, hoặc `TRANSFER` với `IN` là **dương**; còn lại **âm** (`isInflow` trong `shared/src/transactions.ts`, dùng bởi `signedAmount` của backend, sao kê PDF và danh sách giao dịch). Số tiền lưu luôn dương (CHECK `amount > 0`), nên không có "số âm" mơ hồ.
 
 ### 3.2 Các phép biến đổi (đều trong một transaction)
 

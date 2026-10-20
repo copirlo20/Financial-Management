@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -135,7 +135,7 @@ try {
   res = await submit("/budgets", formWith(html, `value="${row.id}"`), {}, jarA);
   check("delete removes the budget", !(await one(`select 1 from budgets where id = $1`, [row.id])) && !clean(await res.text()).includes("/ 2.000.000 ₫"));
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.end();
 }
 report();

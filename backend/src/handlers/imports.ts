@@ -483,7 +483,7 @@ export async function rollbackImport(_prev: RollbackState, formData: FormData): 
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { message: "Không tìm thấy lần nhập." };
 
-  const failure = await prisma.$transaction(
+  return prisma.$transaction(
     async (tx): Promise<RollbackState> => {
       const locked = await tx.$queryRaw<{ id: string }[]>`
         SELECT "id" FROM "import_batches"
@@ -514,7 +514,4 @@ export async function rollbackImport(_prev: RollbackState, formData: FormData): 
     },
     { timeout: 60_000 },
   );
-  if (failure) return failure;
-
-  return undefined;
 }

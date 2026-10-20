@@ -52,7 +52,7 @@ Chi tiết đường đi của một yêu cầu: [request-flow.md](request-flow.
 | `proxy.ts` | Chạy trước mọi yêu cầu: làm mới access token hết hạn, đẩy khách chưa đăng nhập về `/login`, đặt `Content-Security-Policy` (nonce) và HSTS |
 | `next.config.ts` | Header bảo mật cố định, giới hạn tải lên của Server Action, `allowedDevOrigins` (tự lấy mọi IPv4 của máy) |
 | `instrumentation-client.ts` | Chạy trong trình duyệt trước khi trang hydrate. Lúc phát triển, bỏ cảnh báo hydration chỉ do Chrome trên iPhone gắn thuộc tính `__gcr…` cho tính năng tự điền; mọi khác biệt khác vẫn được báo. Cũng lúc phát triển, chặn vòng lặp kết nối lại của HMR (Next.js) làm trang kẹt ở "Rendering…" ([mobile-flow.md](mobile-flow.md)) |
-| `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày |
+| `lib/api/` | `client.ts` gọi backend kèm token, ngôn ngữ, địa chỉ client (`formCommand`/`formUpload` báo mất kết nối ngay trên form); `retry.ts` thử lại khi backend khởi động lại; `backend-url.ts` địa chỉ backend (dùng chung với `proxy.ts`); `wire.ts` khôi phục số thập phân và ngày; `downloadResponse` chuyển file backend dựng (sao kê PDF, file mẫu) cho trình duyệt |
 | `lib/auth/` | Cookie phiên đăng nhập; `dal.ts` hỏi backend "ai đang đăng nhập, AI nào đang bật" |
 | `lib/i18n/`, `lib/theme.ts`, `lib/savings.ts` | Ngôn ngữ phía server; giao diện sáng/tối; tính tiến độ tiết kiệm |
 | `components/` | Thành phần dùng chung: điều hướng, khung chat, hộp xác nhận, lớp phủ chờ, chuyển ngôn ngữ và giao diện, thanh tiến độ ngân sách, biểu tượng danh mục, thông báo của form (`form-message.tsx`) và của từng ô (`field-error.tsx`), danh sách tiền tệ (`currency-options.tsx`), ô nhập ngày `dd/mm/yyyy` (`date-input.tsx`), các phần của một dòng giao dịch (`transaction-parts.tsx`: biểu tượng, dòng ngày · tài khoản · ghi chú, số tiền có dấu và màu), bảng số liệu sau biểu đồ (`chart-table.tsx`)… |
@@ -87,6 +87,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | `currencies.ts`, `rates.ts`, `dates.ts`, `months.ts` | Danh sách tiền tệ và định dạng tiền; gốc tỷ giá; múi giờ, hiển thị ngày `dd/mm/yyyy` và đọc ngày người dùng gõ; tháng |
 | `wire.ts`, `auth.ts`, `form-state.ts` | Kiểu dữ liệu đường truyền và header; tên cookie, thời hạn token; kiểu trạng thái form |
 | `labels.ts`, `category-icons.ts`, `ai.ts`, `imports.ts`, `reports.ts` | Nhãn trạng thái; 30 biểu tượng danh mục; nhà cung cấp AI; mã lỗi nhập sao kê; giới hạn và mã lỗi sao kê PDF |
+| `transactions.ts` | `isInflow`: một giao dịch là tiền vào hay tiền ra (số dư, sao kê PDF, danh sách giao dịch cùng dùng) |
 
 ## database/
 

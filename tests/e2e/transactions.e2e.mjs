@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -187,7 +187,7 @@ try {
   body = clean(await page(`/transactions?accountId=${wallet}`, jarB));
   check("filtering by someone else's account shows nothing of theirs", !body.includes("song song") && !body.includes("Đổi đô"));
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B]]);
+  await removeUsers([A, B]);
   await db.query(`delete from exchange_rates where date = $1`, [RATE_DATE]);
   await db.end();
 }

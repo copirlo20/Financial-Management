@@ -50,6 +50,16 @@ export async function backendFetch(path: string, init: RequestInit = {}): Promis
   return fetchBackend(`${BACKEND_URL}/api${path}`, { ...init, headers: requestHeaders, cache: "no-store" });
 }
 
+// Passes a file the backend built (a statement, a template) on to the browser as a download.
+export function downloadResponse(upstream: Response): Response {
+  const headers = new Headers();
+  for (const name of ["content-type", "content-disposition", "cache-control"]) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return new Response(upstream.body, { headers });
+}
+
 function unexpected(response: Response, what: string): Error {
   return new Error(`The backend answered ${response.status} to ${what}`);
 }

@@ -13,6 +13,8 @@ let running = 0;
 const waiting: (() => void)[] = [];
 
 export class PasswordCheckBusyError extends Error {}
+// What the form says when PasswordCheckBusyError refused the request.
+export const PASSWORD_CHECK_BUSY_MESSAGE = "Hệ thống đang bận. Hãy thử lại sau ít giây.";
 
 async function acquireSlot(): Promise<void> {
   if (running < MAX_RUNNING) {

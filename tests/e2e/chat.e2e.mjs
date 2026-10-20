@@ -1,4 +1,4 @@
-import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one } from "../harness.mjs";
+import { BASE, STAMP, check, report, cookieHeader, registerUser, db, one, removeUsers } from "../harness.mjs";
 
 // The chat assistant (/api/chat). The AI API is replaced by tests/mock-ai.mjs: this suite queues
 // what the "model" says (text, or a request to call a tool) and reads back what the app sent it, which is
@@ -177,7 +177,7 @@ try {
   const dashboard = await (await fetch(BASE + "/dashboard", { headers: { cookie: cookieHeader(jarA) } })).text();
   check("signed-in pages carry the assistant button", dashboard.includes('data-testid="chat-open"'));
 } finally {
-  await db.query(`delete from users where email = any($1)`, [[A, B, C]]);
+  await removeUsers([A, B, C]);
   await db.end();
   await queue([]);
 }

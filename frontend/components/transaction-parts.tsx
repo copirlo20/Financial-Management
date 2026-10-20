@@ -2,6 +2,7 @@ import { ArrowLeftRight } from "lucide-react";
 import { cn } from "cn";
 import { formatMoney } from "@fm/shared/currencies";
 import { formatDate } from "@fm/shared/dates";
+import { isInflow } from "@fm/shared/transactions";
 import { CategoryBadge } from "@/components/category-icon";
 
 // The pieces of a transaction row, the same wherever transactions are listed (dashboard, transactions page).
@@ -16,11 +17,6 @@ type TransactionRow = {
   account: { name: string };
   category: { icon: string | null; color: string | null } | null;
 };
-
-// Money coming in: income, or the receiving side of a transfer.
-function isInflow(row: Pick<TransactionRow, "type" | "transferDirection">): boolean {
-  return row.type === "INCOME" || (row.type === "TRANSFER" && row.transferDirection === "IN");
-}
 
 // A transfer's arrows, otherwise the category's own icon and colour.
 export function TransactionIcon({ row }: { row: TransactionRow }) {

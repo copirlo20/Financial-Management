@@ -1,3 +1,4 @@
+import { rmSync } from "node:fs";
 import { createRequire } from "node:module";
 
 // What every suite shares (tests/e2e over HTTP, tests/browser in a real browser): the project's settings,
@@ -155,5 +156,19 @@ export function statementPdf(rows, { widths = [], right = [], perPage = Infinity
 export const db = new Client({ connectionString: (() => { const u = new URL(process.env.DATABASE_URL); u.search = ""; return u.toString(); })() });
 export const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 export const userId = async (email) => (await one(`select id from users where email = $1`, [email])).id;
+
+// Where uploaded statements wait between upload and confirm (backend/src/imports/storage.ts).
+export const importFilePath = (key) => `${root}backend/storage/imports/${key}`;
+
+// Removes test users and all that is theirs: their rows go with them (cascade), and the statement files of
+// their unfinished imports are deleted from disk.
+export async function removeUsers(emails) {
+  const { rows } = await db.query(
+    `select b."tempFileKey" k from import_batches b join users u on u.id = b."userId" where u.email = any($1) and b."tempFileKey" is not null`,
+    [emails],
+  );
+  for (const { k } of rows) rmSync(importFilePath(k), { force: true });
+  await db.query(`delete from users where email = any($1)`, [emails]);
+}
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

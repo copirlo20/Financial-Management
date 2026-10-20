@@ -3,7 +3,13 @@ import { Prisma, prisma } from "@fm/database";
 import type { UserRole } from "@fm/database";
 import { formText } from "@fm/shared/form-state";
 import { isLocale } from "@fm/shared/i18n/config";
-import { PasswordCheckBusyError, hashPassword, simulatePasswordCheck, verifyPassword } from "../auth/password";
+import {
+  PASSWORD_CHECK_BUSY_MESSAGE,
+  PasswordCheckBusyError,
+  hashPassword,
+  simulatePasswordCheck,
+  verifyPassword,
+} from "../auth/password";
 import { currentSessionId, requireUser } from "../auth/current-user";
 import { issueTokens, revokeRefreshToken, revokeSession, revokeUserSessions } from "../auth/session";
 import { recordLoginFailure, refuseLogin, refuseRegistration } from "../auth/throttle";
@@ -19,8 +25,6 @@ export type AuthFormState =
       values?: { name?: string; email?: string };
     }
   | undefined;
-
-const BUSY_MESSAGE = "Hệ thống đang bận. Hãy thử lại sau ít giây.";
 
 export async function register(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const values = { name: formText(formData, "name"), email: formText(formData, "email") };
@@ -47,7 +51,7 @@ export async function register(_prev: AuthFormState, formData: FormData): Promis
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { errors: { email: ["Email này đã được đăng ký."] }, values };
     }
-    if (error instanceof PasswordCheckBusyError) return { message: BUSY_MESSAGE, values };
+    if (error instanceof PasswordCheckBusyError) return { message: PASSWORD_CHECK_BUSY_MESSAGE, values };
     throw error;
   }
 
@@ -79,7 +83,7 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
       passwordMatches = false;
     }
   } catch (error) {
-    if (error instanceof PasswordCheckBusyError) return { message: BUSY_MESSAGE, values };
+    if (error instanceof PasswordCheckBusyError) return { message: PASSWORD_CHECK_BUSY_MESSAGE, values };
     throw error;
   }
   if (!user || !passwordMatches) {
