@@ -1,5 +1,5 @@
 // Single product time zone until users can pick their own; decides what "today" means in forms.
-export const APP_TIME_ZONE = "Asia/Ho_Chi_Minh";
+const APP_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 // Calendar dates travel as "YYYY-MM-DD" strings and are stored in DATE columns as UTC midnight.
 export function todayIsoDate(): string {

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Cell } from "@fm/backend/imports/parse-file";
 import type { ImportView } from "@fm/backend/views/imports";
 import { formatMoney } from "@fm/shared/currencies";
 import { formatDate, formatDay, isoDateToDate } from "@fm/shared/dates";
-import { columnLetter, formatImportErrors, serializeImportErrors } from "@fm/shared/imports";
+import { cellText, columnLetter, readImportErrors, storedImportErrors } from "@fm/shared/imports";
 import { IMPORT_STATUS_LABELS } from "@fm/shared/labels";
 import { cancelImport, confirmDocumentImport, confirmImport } from "@/app/actions/imports";
 import { FormNavigationMarker } from "@/components/navigation-pending";
@@ -18,6 +17,7 @@ import { DeleteImportButton } from "../delete-import-button";
 import { DocumentForm } from "./document-form";
 import { MappingForm } from "./mapping-form";
 import { RollbackButton } from "./rollback-button";
+import { RowErrors } from "./row-errors";
 import type { ReviewRow } from "./row-categories";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,11 +37,6 @@ function reviewRows({ rows, categories }: ExtractedRows, currency: string, local
     description: row.description,
     categoryId: categories[String(row.rowNumber)] ?? "",
   }));
-}
-
-function cellText(cell: Cell): string {
-  if (cell === null) return "";
-  return cell instanceof Date ? formatDate(cell) : String(cell);
 }
 
 export default async function ImportDetailPage({ params }: PageProps<"/imports/[id]">) {
@@ -71,6 +66,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
 
   if (!pending) {
     const failedRows = batch.rowCount - batch.importedCount - batch.skippedCount;
+    const rowErrors = readImportErrors(batch.errorMessage);
     return (
       <>
         {heading}
@@ -99,14 +95,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
             {batch.skippedCount > 0 && (
               <p className="text-sm text-muted-foreground">{t("Dòng bị bỏ qua là dòng trùng ngày, số tiền và diễn giải với giao dịch đã nhập trước đó vào tài khoản này.")}</p>
             )}
-            {batch.errorMessage && (
-              <div>
-                <p className="text-sm font-medium">{t("Các dòng không đọc được")}</p>
-                <pre className="mt-1 max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap">
-                  {formatImportErrors(batch.errorMessage, t)}
-                </pre>
-              </div>
-            )}
+            {rowErrors && <RowErrors errors={rowErrors} t={t} />}
             <div className="flex flex-wrap items-start gap-3">
               <Link
                 href={`/transactions?accountId=${batch.account.id}`}
@@ -127,7 +116,6 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
 
   const { expenseCategories, incomeCategories, categoryDefaults, document: extracted, table } = pending;
   if (extracted) {
-    const unreadable = formatImportErrors(serializeImportErrors(extracted.errors), t);
     return (
       <>
         {heading}
@@ -139,12 +127,7 @@ export default async function ImportDetailPage({ params }: PageProps<"/imports/[
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 *:min-w-0">
-            {unreadable && (
-              <div>
-                <p className="text-sm font-medium">{t("Các dòng không đọc được")}</p>
-                <pre className="mt-1 max-h-40 overflow-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap">{unreadable}</pre>
-              </div>
-            )}
+            {extracted.errors.length > 0 && <RowErrors errors={storedImportErrors(extracted.errors)} t={t} />}
             <DocumentForm
               action={confirmDocumentImport.bind(null, batch.id)}
               expenseCategories={expenseCategories}

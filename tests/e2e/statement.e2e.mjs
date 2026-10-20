@@ -1,5 +1,5 @@
 import { pdfText } from "../pdf-text.mjs";
-import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory } from "../harness.mjs";
+import { BASE, STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory, addTransaction } from "../harness.mjs";
 
 // The PDF account statement (/transactions/statement → backend GET /api/reports/statement): the figures for
 // one account and for all accounts, what is left out of the period, the refusals and the per-hour limit.
@@ -27,11 +27,7 @@ try {
   const userId = async (email) => (await one(`select id from users where email = $1`, [email])).id;
   const [aId, bId] = [await userId(A), await userId(B)];
   const [food, salary] = [await systemCategory("food"), await systemCategory("salary")];
-  const addTx = (owner, account, { type = "EXPENSE", category = food, amount, date, note = null, currency = "VND", converted = amount, group = null, direction = null }) =>
-    db.query(
-      `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,note,"transferGroupId","transferDirection","updatedAt")
-       values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$6,$7,$8::date,$9,$10,$11,now())`,
-      [owner, account, category, type, amount, currency, converted, date, note, group, direction]);
+  const addTx = (owner, account, fields) => addTransaction(owner, account, { category: food, ...fields });
 
   const wallet = await addAccount(aId, "Ví chính", "VND", 1000000);
   const savings = await addAccount(aId, "Tiết kiệm", "VND", 0);

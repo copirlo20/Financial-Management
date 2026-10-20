@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx, removeUsers, importFilePath, addAccount, systemCategory } from "../harness.mjs";
+import { STAMP, check, report, clean, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, statementXlsx, removeUsers, importFilePath, addAccount, systemCategory, hasTableRow } from "../harness.mjs";
 
 // Importing with the AI assistant. The AI API is replaced by tests/mock-ai.mjs, which the
 // runner starts and the app is pointed at; this suite queues the assistant's answers and reads back
@@ -230,7 +230,10 @@ try {
   const docForm = formWith(html, 'id="doc-expenseCategoryId"');
   defaults = formDefaults(docForm);
   check("review page lists the extracted rows, the unreadable ones, and a warning to check them",
-    body.includes("Trợ lý AI đọc được 3 giao dịch") && body.includes("GRAB *TRIP 123") && body.includes("DIEN LUC") && body.includes("Dòng 3: Ngày không hợp lệ") && body.includes("Dòng 4: Thiếu số tiền") && body.includes("AI có thể đọc nhầm"));
+    body.includes("Trợ lý AI đọc được 3 giao dịch") && body.includes("GRAB *TRIP 123") && body.includes("DIEN LUC") && body.includes("AI có thể đọc nhầm") &&
+      hasTableRow(html, ["Dòng", "Lý do", "Ngày", "Số tiền", "Diễn giải"]) &&
+      hasTableRow(html, ["3", "Ngày không hợp lệ hoặc không đúng định dạng đã chọn.", "10/11/2026", "1000", "ngày sai"]) &&
+      hasTableRow(html, ["4", "Thiếu số tiền hoặc số tiền bằng 0.", "2026-10-11", "không đọc được số"]));
   check("PDF rows show the suggestion; a wrong-type suggestion is dropped",
     defaults["rowCategory-1"] === transport && defaults["rowCategory-2"] === "" && defaults["rowCategory-5"] === "" && defaults.expenseCategoryId === otherExpense && defaults.incomeCategoryId === otherIncome,
     JSON.stringify(defaults));
@@ -248,8 +251,9 @@ try {
       "EXPENSE:45000.00:9:GRAB *TRIP 123:transport | INCOME:20000000.00:10:LUONG T10:salary | EXPENSE:1250000.50:12:DIEN LUC:food" && rows.every((r) => r.source === "IMPORT"),
     rows.map((r) => `${r.type}:${r.amount}:${r.date.getDate()}:${r.note}:${r.systemKey}`).join(" | "));
   check("balance after the PDF import", (await balance(bank)) === "39619999.50", await balance(bank));
-  body = clean(await page(`/imports/${batch6}`, jarA));
-  check("result page reports the rows the assistant could not read", body.includes("Dòng 3: Ngày không hợp lệ") && body.includes("Hoàn tác lần nhập này"));
+  html = await page(`/imports/${batch6}`, jarA);
+  check("result page reports the rows the assistant could not read, with what it read in them",
+    hasTableRow(html, ["3", "Ngày không hợp lệ hoặc không đúng định dạng đã chọn.", "10/11/2026", "1000", "ngày sai"]) && clean(html).includes("Hoàn tác lần nhập này"));
   await confirm(batch6, docForm, { expenseCategoryId: otherExpense, incomeCategoryId: otherIncome });
   check("confirming a PDF batch twice imports nothing more", (await txCount(bank)) === 7 && (await balance(bank)) === "39619999.50");
 

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { crc32, deflateRawSync } from "node:zlib";
-import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, removeUsers, importFilePath, addAccount } from "../harness.mjs";
+import { root, STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, formDefaults, statementPdf, removeUsers, importFilePath, addAccount, hasTableRow, balanceDrift } from "../harness.mjs";
 
 const require = createRequire(root + "package.json");
 const ExcelJS = require("exceljs");
@@ -184,8 +184,12 @@ try {
   batch = await batchOf(batch1);
   check("confirm redirects to the result", res.status === 303 && res.headers.get("location") === `/imports/${batch1}`, `${res.status}`);
   check("batch records imported / skipped / failed rows", batch.status === "PROCESSED" && batch.importedCount === 4 && batch.skippedCount === 0 && batch.rowCount === 6, `${batch.importedCount}/${batch.skippedCount}/${batch.rowCount}`);
-  const resultText = clean(await page(`/imports/${batch1}`, jarA));
-  check("row errors are reported with row numbers", ["Dòng 8: Dòng có cả số tiền chi và số tiền thu.", "Dòng 9: Ngày không hợp lệ"].every((m) => resultText.includes(m)), batch.errorMessage);
+  const resultHtml = await page(`/imports/${batch1}`, jarA);
+  check("row errors are listed with the row number, the reason and every value the row held, under the file's column names",
+    hasTableRow(resultHtml, ["Dòng", "Lý do", "A — Ngày GD", "B — Diễn giải", "C — Ghi nợ", "D — Ghi có"]) &&
+      hasTableRow(resultHtml, ["8", "Dòng có cả số tiền chi và số tiền thu.", "08/10/2026", "Cả hai", "1", "2"]) &&
+      hasTableRow(resultHtml, ["9", "Ngày không hợp lệ hoặc không đúng định dạng đã chọn.", "32/10/2026", "Ngày sai", "5,000"]),
+    batch.errorMessage);
   check("temp file is deleted after confirm", batch.tempFileKey === null && !existsSync(importFilePath(key1)));
   let rows = (await db.query(`select * from transactions where "importBatchId" = $1 order by date, amount`, [batch1])).rows;
   check("transactions carry type, amount, date, note and source",
@@ -369,11 +373,8 @@ try {
   rmSync(importFilePath(freshOrphanKey), { force: true });
   await submit(`/imports/${recentId}`, formWith(await page(`/imports/${recentId}`, jarA), "Hủy lần nhập này"), {}, jarA);
 
-  const drift = (await db.query(
-    `select a.name from accounts a where a."userId" = $1 and a."currentBalance" <> a."initialBalance" + coalesce((
-       select sum(case when t.type = 'INCOME' or t."transferDirection" = 'IN' then t.amount else -t.amount end)
-       from transactions t where t."accountId" = a.id), 0)`, [aId])).rows;
-  check("every balance equals opening balance plus its transactions", drift.length === 0, drift.map((d) => d.name).join());
+  const drift = await balanceDrift(aId);
+  check("every balance equals opening balance plus its transactions", drift.length === 0, drift.join());
 } finally {
   await removeUsers([A, B]);
   await db.end();

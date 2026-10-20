@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, registerUser, db, one, removeUsers, addAccount, systemCategory, addTransaction } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -20,11 +20,7 @@ try {
   const coffee = await addCategory("Cà phê", food);
   const wallet = await addAccount(aId, "Ví", "VND", 2500000);
   const usd = await addAccount(aId, "Đô", "USD", 120.5);
-  const addTx = (categoryId, amount, date, { type = "EXPENSE", account = wallet, currency = "VND", converted = amount, group = null, direction = null } = {}) =>
-    db.query(
-      `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,"transferGroupId","transferDirection","updatedAt")
-       values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$6,$7,$8::date,$9,$10,now())`,
-      [aId, account, categoryId, type, amount, currency, converted, date, group, direction]);
+  const addTx = (category, amount, date, { account = wallet, ...rest } = {}) => addTransaction(aId, account, { ...rest, category, amount, date });
 
   // Empty dashboard first (user B has nothing).
   check("signed-out /dashboard redirects to login", (await get("/dashboard")).status === 307);

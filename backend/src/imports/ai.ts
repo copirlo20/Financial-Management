@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AiBudgetError, aiAvailable, aiFailure, aiModel, assertAiBudget, recordAiUsage, takeHourlyQuota } from "../ai/client";
 import { AI_FAILURE_MESSAGES } from "../ai/messages";
+import { fileRowCells, readRowCells, type RowCell } from "@fm/shared/imports";
 import { parseAmount, parseDate, type ParsedRow, type RowError } from "./mapping";
 import { MAX_ROWS, type Cell } from "./parse-file";
 
@@ -117,20 +118,21 @@ async function requestTransactions(
 export type Extraction = { rows: ParsedRow[]; errors: RowError[]; categories: Record<string, string> };
 
 // The assistant's reading of dates and amounts is the data here, so every value is validated, and the
-// user reviews the rows before anything is written.
-function addTransaction(extraction: Extraction, rowNumber: number, transaction: RawTransaction, categories: AiCategory[]) {
+// user reviews the rows before anything is written. `cells`: what a row that fails is shown with (the
+// row of the spreadsheet, or what the assistant read from the PDF).
+function addTransaction(
+  extraction: Extraction,
+  rowNumber: number,
+  transaction: RawTransaction,
+  categories: AiCategory[],
+  cells: RowCell[],
+) {
+  const fail = (message: string) => extraction.errors.push({ rowNumber, message, cells });
   const date = parseDate(transaction.date, "YMD");
-  if (!date) {
-    extraction.errors.push({ rowNumber, message: "Ngày không hợp lệ hoặc không đúng định dạng đã chọn." });
-    return;
-  }
+  if (!date) return fail("Ngày không hợp lệ hoặc không đúng định dạng đã chọn.");
   const amount = parseAmount(transaction.amount.trim() || null, ".");
   if (amount === "invalid" || amount === null || amount.zero) {
-    extraction.errors.push({
-      rowNumber,
-      message: amount === "invalid" ? "Số tiền không hợp lệ." : "Thiếu số tiền hoặc số tiền bằng 0.",
-    });
-    return;
+    return fail(amount === "invalid" ? "Số tiền không hợp lệ." : "Thiếu số tiền hoặc số tiền bằng 0.");
   }
   const description = transaction.description.replace(/\s+/g, " ").trim().slice(0, 200);
   extraction.rows.push({ rowNumber, date, type: transaction.type, amount: amount.abs, description });
@@ -153,7 +155,9 @@ export async function extractDocumentRows(
     "File PDF có quá nhiều giao dịch để đọc trong một lần. Hãy tách thành các file nhỏ hơn.",
   );
   const extraction: Extraction = { rows: [], errors: [], categories: {} };
-  transactions.slice(0, MAX_ROWS).forEach((transaction, index) => addTransaction(extraction, index + 1, transaction, categories));
+  transactions
+    .slice(0, MAX_ROWS)
+    .forEach((transaction, index) => addTransaction(extraction, index + 1, transaction, categories, readRowCells(transaction)));
   return extraction;
 }
 
@@ -201,7 +205,7 @@ export async function extractTableRows(
 
   const extraction: Extraction = { rows: [], errors: [], categories: {} };
   for (const { row, transaction } of found.sort((a, b) => a.row - b.row)) {
-    addTransaction(extraction, row, transaction, categories);
+    addTransaction(extraction, row, transaction, categories, fileRowCells(table[row - 1]));
   }
   return extraction;
 }

@@ -18,7 +18,13 @@ const analysisSchema = z.discriminatedUnion("kind", [
         description: z.string(),
       }),
     ),
-    errors: z.array(z.object({ rowNumber: z.number().int(), message: z.string() })),
+    errors: z.array(
+      z.object({
+        rowNumber: z.number().int(),
+        message: z.string(),
+        cells: z.array(z.tuple([z.string(), z.string()])).optional(),
+      }),
+    ),
     categories: rowCategories,
   }),
 ]);

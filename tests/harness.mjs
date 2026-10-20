@@ -40,6 +40,15 @@ export const clean = (s) =>
     .replace(/<!-- -->/g, "")
     .replace(/\u00a0|\u202f/g, " ");
 
+// The rows of every table on a page, each as the text of its cells (header cells included), empty
+// cells left out.
+const tableRows = (html) =>
+  [...clean(html).matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((row) =>
+    [...row[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((cell) => cell[1].replace(/<[^>]+>/g, "").trim()).filter(Boolean),
+  );
+// Whether some table row holds exactly these cells, in this order.
+export const hasTableRow = (html, cells) => tableRows(html).some((row) => row.join("|") === cells.join("|"));
+
 // ---------- Cookies ----------
 export function readCookies(res, jar = {}) {
   for (const header of res.headers.getSetCookie()) {
@@ -167,6 +176,28 @@ export async function addAccount(owner, name, currency = "VND", balance = 0, typ
      values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$5,now()) returning id`,
     [owner, name, type, currency, balance],
   )).id;
+}
+
+// A transaction written as it is stored (the account's balance is left alone). `converted` is the amount
+// in the user's default currency, null for one without an exchange rate.
+export function addTransaction(owner, account, { type = "EXPENSE", category = null, amount, date, note = null, currency = "VND", converted = amount, group = null, direction = null }) {
+  return db.query(
+    `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,note,"transferGroupId","transferDirection","updatedAt")
+     values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$6,$7,$8::date,$9,$10,$11,now())`,
+    [owner, account, category, type, amount, currency, converted, date, note, group, direction],
+  );
+}
+
+// The names of the user's accounts whose stored balance is not their opening balance plus their
+// transactions: empty when every write kept the balances right.
+export async function balanceDrift(owner) {
+  const { rows } = await db.query(
+    `select a.name from accounts a where a."userId" = $1 and a."currentBalance" <> a."initialBalance" + coalesce((
+       select sum(case when t.type = 'INCOME' or t."transferDirection" = 'IN' then t.amount else -t.amount end)
+       from transactions t where t."accountId" = a.id), 0)`,
+    [owner],
+  );
+  return rows.map((row) => row.name);
 }
 
 // Where uploaded statements wait between upload and confirm (backend/src/imports/storage.ts).

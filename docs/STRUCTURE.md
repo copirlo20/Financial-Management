@@ -86,7 +86,7 @@ Mã thuần (không phụ thuộc React hay Node), dùng ở cả hai phía:
 | `i18n/` | `config.ts` (ngôn ngữ), `translate.ts`, `en.ts` (bản dịch tiếng Anh; câu tiếng Việt là khóa) |
 | `currencies.ts`, `rates.ts`, `dates.ts`, `months.ts` | Danh sách tiền tệ và định dạng tiền; gốc tỷ giá; múi giờ, hiển thị ngày `dd/mm/yyyy` và đọc ngày người dùng gõ; tháng |
 | `wire.ts`, `auth.ts`, `form-state.ts` | Kiểu dữ liệu đường truyền và header; tên cookie, thời hạn token; kiểu trạng thái form |
-| `labels.ts`, `category-icons.ts`, `ai.ts`, `imports.ts`, `reports.ts` | Nhãn trạng thái; 30 biểu tượng danh mục; nhà cung cấp AI; mã lỗi nhập sao kê; giới hạn và mã lỗi sao kê PDF |
+| `labels.ts`, `category-icons.ts`, `ai.ts`, `imports.ts`, `reports.ts` | Nhãn trạng thái; 30 biểu tượng danh mục; nhà cung cấp AI; dòng lỗi nhập sao kê (lưu, đọc, ô của dòng kèm tên cột); giới hạn và mã lỗi sao kê PDF |
 | `transactions.ts` | `isInflow`: một giao dịch là tiền vào hay tiền ra (số dư, sao kê PDF, danh sách giao dịch cùng dùng) |
 
 ## database/

@@ -1005,7 +1005,7 @@ routes.ts › command("post", "/imports", (form, req) => …)
     │   │   ├─ ai/client.ts › recordAiUsage(userId, tokens)   hit("ai-tokens:…", 1 ngày, tokens)
     │   │   ├─ ✗ truncated → AiImportError(quá dài)
     │   │   └─ JSON.parse + transactionsSchema.parse   ✗ → AiImportError
-    │   │   addTransaction(): kiểm lại ngày, số tiền bằng mapping.ts › parseDate(), parseAmount()
+    │   │   addTransaction(): kiểm lại ngày, số tiền bằng mapping.ts › parseDate(), parseAmount(); dòng hỏng giữ kèm ô của nó (fileRowCells / readRowCells)
     │   │   ⇒ Extraction { rows, errors, categories }
     │   │
     │   ├─ ✗ AiImportError: không có bảng → { errors: { file: [message] } }; có bảng → analysis { kind: "table", failed: true }

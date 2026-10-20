@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers, addAccount, systemCategory } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers, addAccount, systemCategory, addTransaction } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -24,11 +24,7 @@ try {
   const bPrivate = await addCategory(bId, "Riêng B");
   const wallet = await addAccount(aId, "Ví", "VND");
   const usd = await addAccount(aId, "Đô", "USD");
-  const addTx = (categoryId, amount, date, { type = "EXPENSE", account = wallet, currency = "VND", converted = amount, group = null, direction = null } = {}) =>
-    db.query(
-      `insert into transactions (id,"userId","accountId","categoryId",type,amount,currency,"amountInDefaultCurrency",date,"transferGroupId","transferDirection","updatedAt")
-       values (gen_random_uuid()::text,$1,$2,$3,$4,$5,$6,$7,$8::date,$9,$10,now())`,
-      [aId, account, categoryId, type, amount, currency, converted, date, group, direction]);
+  const addTx = (category, amount, date, { account = wallet, ...rest } = {}) => addTransaction(aId, account, { ...rest, category, amount, date });
 
   check("signed-out /budgets redirects to login", (await get("/budgets")).status === 307);
   let html = await page("/budgets", jarA);

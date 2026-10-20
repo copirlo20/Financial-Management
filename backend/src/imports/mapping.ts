@@ -1,4 +1,4 @@
-import type { RowError } from "@fm/shared/imports";
+import { fileRowCells, type RowError } from "@fm/shared/imports";
 import type { Cell } from "./parse-file";
 
 export type { RowError };
@@ -180,11 +180,13 @@ export function parseDate(cell: Cell, format: DateFormat): string | null {
 export function buildRows(table: Cell[][], mapping: ColumnMapping): { rows: ParsedRow[]; errors: RowError[] } {
   const rows: ParsedRow[] = [];
   const errors: RowError[] = [];
+  const header = mapping.headerRow > 0 ? table[mapping.headerRow - 1] : [];
 
   for (let index = mapping.headerRow; index < table.length; index++) {
     const cells = table[index];
     const rowNumber = index + 1;
-    const fail = (message: string) => errors.push({ rowNumber, message });
+    // The whole row goes with its error, so the person can see what the file held there.
+    const fail = (message: string) => errors.push({ rowNumber, message, cells: fileRowCells(cells, header) });
 
     const date = parseDate(cells[mapping.dateColumn] ?? null, mapping.dateFormat);
     if (!date) {

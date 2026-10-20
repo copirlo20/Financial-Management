@@ -177,7 +177,7 @@ erDiagram
         int rowCount
         int importedCount
         int skippedCount
-        string errorMessage "null; lỗi từng dòng"
+        string errorMessage "null; JSON dòng lỗi: số dòng, lý do, dữ liệu dòng"
         datetime createdAt
         datetime updatedAt
     }

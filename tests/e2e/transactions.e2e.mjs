@@ -1,4 +1,4 @@
-import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers, addAccount } from "../harness.mjs";
+import { STAMP, check, report, clean, get, page, formWith, submit, registerUser, db, one, userId, removeUsers, addAccount, balanceDrift } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -154,11 +154,8 @@ try {
   await submit("/transactions", formWith(html, `value="${pho.id}"`), {}, jarA);
   check("deleting an expense refunds the account", !(await txByNote(aId, "Phở")) && (await balance(wallet)) === "743000.00", await balance(wallet));
 
-  const drift = (await db.query(
-    `select a.name from accounts a where a."userId" = $1 and a."currentBalance" <> a."initialBalance" + coalesce((
-       select sum(case when t.type = 'INCOME' or t."transferDirection" = 'IN' then t.amount else -t.amount end)
-       from transactions t where t."accountId" = a.id), 0)`, [aId])).rows;
-  check("every balance equals opening balance plus its transactions", drift.length === 0, drift.map((d) => d.name).join());
+  const drift = await balanceDrift(aId);
+  check("every balance equals opening balance plus its transactions", drift.length === 0, drift.join());
 
   // ---------- Filters & pagination ----------
   await db.query(

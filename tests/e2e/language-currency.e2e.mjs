@@ -1,4 +1,4 @@
-import { BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf, removeUsers, addAccount, systemCategory } from "../harness.mjs";
+import { BASE, STAMP, check, report, decode, clean, readCookies, cookieHeader, get, page, formWith, submit, db, one, statementPdf, removeUsers, addAccount, systemCategory, hasTableRow } from "../harness.mjs";
 
 const A = `e2e-a-${STAMP}@example.com`;
 const B = `e2e-b-${STAMP}@example.com`;
@@ -97,10 +97,13 @@ try {
   }
   check(`no Vietnamese text left on ${pages.length} pages in English`, leftovers.length === 0, leftovers.join(" || "));
   check("pending import page is covered and in English", clean(pendingHtml).includes("Map columns") && clean(pendingHtml).includes("Confirm and import"));
-  const errorEn = clean(await page(doneImport, jarA));
-  const errorVi = clean(await page(doneImport, { ...jarA, locale: "vi" }));
-  check("import row errors follow the reader's language, not the language at import time",
-    errorEn.includes("Row 3: The date is invalid or does not match the chosen format.") && errorVi.includes("Dòng 3: Ngày không hợp lệ hoặc không đúng định dạng đã chọn.") && !errorVi.includes("Row 3"));
+  const errorEn = await page(doneImport, jarA);
+  const errorVi = await page(doneImport, { ...jarA, locale: "vi" });
+  check("import row errors follow the reader's language, not the language at import time; the row's values stay as in the file",
+    hasTableRow(errorEn, ["Row", "Reason", "A — Date", "B — Description", "C — Amount"]) &&
+      hasTableRow(errorEn, ["3", "The date is invalid or does not match the chosen format.", "2026-13-01", "Junk", "5"]) &&
+      hasTableRow(errorVi, ["Dòng", "Lý do", "A — Date", "B — Description", "C — Amount"]) &&
+      hasTableRow(errorVi, ["3", "Ngày không hợp lệ hoặc không đúng định dạng đã chọn.", "2026-13-01", "Junk", "5"]));
 
   body = clean(await page("/accounts", jarA));
   check("money and labels use English formatting", body.includes("Bank account · VND") && /₫\s?13,175,000/.test(body) && body.includes("Total converted to VND"), body.match(/₫[\d,]+/g)?.slice(0, 4).join(" "));

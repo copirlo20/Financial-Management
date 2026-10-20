@@ -96,10 +96,16 @@ Kết quả AI lưu vào `ImportBatch.aiAnalysis`; **file gốc không được 
 
 | Trạng thái | Trang hiện |
 | --- | --- |
-| `PENDING`, có kết quả AI | **Bảng giao dịch AI đọc được**: ngày, số tiền, loại, diễn giải, ô chọn danh mục cho từng dòng (tối đa **100 dòng đầu**), cùng danh sách dòng AI đọc không được |
+| `PENDING`, có kết quả AI | **Bảng giao dịch AI đọc được**: ngày, số tiền, loại, diễn giải, ô chọn danh mục cho từng dòng (tối đa **100 dòng đầu**), cùng **bảng dòng lỗi** (bên dưới) với những gì AI đọc được ở dòng đó |
 | `PENDING`, không AI | **Xem trước 20 dòng đầu** của file và **form ghép cột** điền sẵn theo gợi ý (mục dưới) |
 | `PENDING`, file tạm đã mất | Chỉ có nút hủy |
-| `PROCESSED`, `ROLLED_BACK` | Kết quả: số dòng đã nhập, bỏ qua vì trùng, dòng lỗi (kèm lý do), liên kết xem giao dịch |
+| `PROCESSED`, `ROLLED_BACK` | Kết quả: số dòng đã nhập, bỏ qua vì trùng, số dòng lỗi và **bảng dòng lỗi**, liên kết xem giao dịch |
+
+**Bảng dòng lỗi** ([row-errors.tsx](../frontend/app/(app)/imports/[id]/row-errors.tsx)) hiện mỗi dòng không đọc được với **số dòng**, **lý do** và **toàn bộ dữ liệu của dòng đó**, để người dùng tìm lại trong sao kê và nhập tay nếu cần:
+
+- File ghép cột tay (và Excel do AI đọc): mọi ô của dòng; cột ghi bằng chữ cái và tên cột trong file (`A — Ngày GD`, `B — Diễn giải`…).
+- PDF do AI đọc: ngày, số tiền, diễn giải đúng như AI đọc được.
+- Lưu tối đa **100 dòng lỗi** mỗi lần nhập (mỗi ô tối đa 200 ký tự); phần còn lại ghi "… và N dòng khác". Lý do được dịch theo ngôn ngữ người xem, dữ liệu giữ nguyên như trong file. Lần nhập cũ, lưu trước khi có dữ liệu dòng, chỉ hiện số dòng và lý do.
 
 ### Gợi ý ghép cột: vì sao không cần AI
 
@@ -134,7 +140,7 @@ Cách làm:
    - **Số tiền**: bỏ ký hiệu tiền tệ và khoảng trắng, nhận `(1,200.50)` là âm, hiểu `1.500.000 VND`; bỏ dấu ngàn theo dấu thập phân đã chọn. Cố ý **không làm tròn**: "1.500" đọc nhầm dấu phải **báo lỗi**, không lặng lẽ thành 1,50.
    - **Chiều thu/chi**: một cột thì số âm là chi, dương là thu; hai cột thì có tiền ra là chi, có tiền vào là thu, có cả hai hoặc không có cái nào là dòng lỗi.
    - Diễn giải gọn về một dòng, tối đa 200 ký tự.
-4. Dòng lỗi **không làm hỏng cả lô**: được gom lại kèm lý do và số dòng, các dòng còn lại vẫn nhập. Nếu **không đọc được dòng nào**: "Không đọc được dòng giao dịch nào với cách ghép cột này…" kèm lý do, **không ghi gì**.
+4. Dòng lỗi **không làm hỏng cả lô**: được gom lại kèm số dòng, lý do và các ô của dòng (`fileRowCells`), các dòng còn lại vẫn nhập. Nếu **không đọc được dòng nào**: "Không đọc được dòng giao dịch nào với cách ghép cột này…" kèm lý do, **không ghi gì**.
 5. Chuyển sang bước ghi (mục 4). Cột ghép được lưu vào `columnMapping` để dò lỗi sau này.
 
 ## 3b. Xác nhận khi AI đọc (`POST /api/imports/:id/confirm-document`)

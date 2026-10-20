@@ -325,6 +325,10 @@ export const en: Record<string, string> = {
   "Dòng bị bỏ qua là dòng trùng ngày, số tiền và diễn giải với giao dịch đã nhập trước đó vào tài khoản này.":
     "Skipped rows have the same date, amount and description as a transaction already imported into this account.",
   "Các dòng không đọc được": "Rows that could not be read",
+  "Mỗi dòng kèm lý do và toàn bộ dữ liệu của dòng đó trong file, để bạn đối chiếu với sao kê.":
+    "Each row comes with the reason and everything it held in the file, so you can check it against the statement.",
+  "Dòng": "Row",
+  "Lý do": "Reason",
   "Xem giao dịch của tài khoản": "View the account's transactions",
   "File tạm của lần nhập này không còn. Hãy hủy và tải file lên lại.":
     "The temporary file for this import is gone. Cancel it and upload the file again.",
